@@ -12,10 +12,13 @@ class SymptomsViewModel {
     @Published var symptoms: [Symptom] = []
     @Published var symptomsBySystem: [SystemType: [Symptom]] = [:]
     @Published var selectedSymptomsCount: Int = 0
+    @Published var perSystemSubgrades: [SystemType: Subgrade] = [:]
     
     private var cancellables = Set<AnyCancellable>()
+    private let severityEngine: SeverityEngine
     
-    init() {
+    init(severityEngine: SeverityEngine = SeverityEngine()) {
+        self.severityEngine = severityEngine
         loadSymptoms()
         setupBindings()
     }
@@ -32,9 +35,18 @@ class SymptomsViewModel {
             }
             .assign(to: &$selectedSymptomsCount)
         
+        // Обновляем symptomsBySystem при изменении symptoms
+        // (updateSubgrades вызывается синхронно в toggleSymptom, так что не нужно здесь)
         $symptoms
             .sink { [weak self] _ in
                 self?.updateSymptomsBySystem()
+            }
+            .store(in: &cancellables)
+        
+        // Также обновляем субградации при изменении symptoms (на случай если симптомы изменяются не через toggleSymptom)
+        $symptoms
+            .sink { [weak self] _ in
+                self?.updateSubgrades()
             }
             .store(in: &cancellables)
     }
@@ -43,9 +55,18 @@ class SymptomsViewModel {
         symptomsBySystem = Dictionary(grouping: symptoms) { $0.system }
     }
     
+    private func updateSubgrades() {
+        let selected = getSelectedSymptoms()
+        perSystemSubgrades = severityEngine.computeSubgrades(selectedSymptoms: selected)
+    }
+    
     func toggleSymptom(_ symptom: Symptom) {
         if let index = symptoms.firstIndex(where: { $0.id == symptom.id }) {
             symptoms[index].isSelected.toggle()
+            // Синхронно обновляем symptomsBySystem для немедленного доступа
+            updateSymptomsBySystem()
+            // Синхронно обновляем субградации
+            updateSubgrades()
         }
     }
     
@@ -55,6 +76,10 @@ class SymptomsViewModel {
     
     func getSystems() -> [SystemType] {
         return SystemType.allCases
+    }
+    
+    func getSubgrade(for system: SystemType) -> Subgrade {
+        return perSystemSubgrades[system] ?? .none
     }
 }
 

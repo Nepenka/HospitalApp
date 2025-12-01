@@ -57,6 +57,8 @@ class SymptomsViewController: UIViewController {
     }
     
     private func setupUI() {
+        // Принудительно устанавливаем светлую тему
+        overrideUserInterfaceStyle = .light
         view.backgroundColor = .systemBackground
         title = "Симптомы"
         
@@ -93,9 +95,16 @@ class SymptomsViewController: UIViewController {
             .assign(to: \.text, on: selectedCountLabel)
             .store(in: &cancellables)
         
-        viewModel.$symptoms
+        // Обновляем заголовки секций при изменении субградаций
+        viewModel.$perSystemSubgrades
             .sink { [weak self] _ in
-                self?.tableView.reloadData()
+                guard let self = self else { return }
+                // Обновляем все заголовки секций
+                DispatchQueue.main.async {
+                    for section in 0..<self.viewModel.getSystems().count {
+                        self.tableView.reloadSections(IndexSet(integer: section), with: .none)
+                    }
+                }
             }
             .store(in: &cancellables)
     }
@@ -126,14 +135,78 @@ extension SymptomsViewController: UITableViewDataSource, UITableViewDelegate {
         return viewModel.symptomsBySystem[system]?.count ?? 0
     }
     
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return viewModel.getSystems()[section].displayName
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let system = viewModel.getSystems()[section]
+        let subgrade = viewModel.getSubgrade(for: system)
+        
+        let containerView = UIView()
+        containerView.backgroundColor = .systemGroupedBackground
+        
+        let stackView = UIStackView()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .horizontal
+        stackView.spacing = 8
+        stackView.alignment = .center
+        
+        let titleLabel = UILabel()
+        titleLabel.text = system.displayName
+        titleLabel.font = .systemFont(ofSize: 17, weight: .semibold)
+        
+        let badgeLabel = UILabel()
+        if subgrade != .none {
+            badgeLabel.text = subgrade.shortName
+            badgeLabel.font = .systemFont(ofSize: 14, weight: .bold)
+            badgeLabel.textColor = .white
+            badgeLabel.textAlignment = .center
+            badgeLabel.backgroundColor = colorForSubgrade(subgrade)
+            badgeLabel.layer.cornerRadius = 10
+            badgeLabel.clipsToBounds = true
+            
+            badgeLabel.widthAnchor.constraint(equalToConstant: 30).isActive = true
+            badgeLabel.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        }
+        
+        stackView.addArrangedSubview(titleLabel)
+        if subgrade != .none {
+            stackView.addArrangedSubview(badgeLabel)
+        }
+        
+        containerView.addSubview(stackView)
+        
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(lessThanOrEqualTo: containerView.trailingAnchor, constant: -16),
+            stackView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 8),
+            stackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -4)
+        ])
+        
+        return containerView
+    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 36
+    }
+    
+    private func colorForSubgrade(_ subgrade: Subgrade) -> UIColor {
+        switch subgrade {
+        case .none:
+            return .clear
+        case .light:
+            return .systemGreen
+        case .moderate:
+            return .systemOrange
+        case .severe:
+            return .systemRed
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "SymptomCell", for: indexPath) as! SymptomCell
         let system = viewModel.getSystems()[indexPath.section]
-        if let symptom = viewModel.symptomsBySystem[system]?[indexPath.row] {
+        // Получаем симптом напрямую из symptomsBySystem, который уже обновлен
+        if let symptomsInSystem = viewModel.symptomsBySystem[system],
+           indexPath.row < symptomsInSystem.count {
+            let symptom = symptomsInSystem[indexPath.row]
             cell.configure(with: symptom)
         }
         return cell
@@ -142,11 +215,23 @@ extension SymptomsViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let system = viewModel.getSystems()[indexPath.section]
-        if let symptom = viewModel.symptomsBySystem[system]?[indexPath.row] {
-            viewModel.toggleSymptom(symptom)
-            if let cell = tableView.cellForRow(at: indexPath) as? SymptomCell {
-                cell.configure(with: symptom)
-            }
+        
+        // Получаем симптом из текущего состояния
+        guard let symptomsInSystem = viewModel.symptomsBySystem[system],
+              indexPath.row < symptomsInSystem.count else { return }
+        
+        let symptom = symptomsInSystem[indexPath.row]
+        
+        // Переключаем симптом (это синхронно обновит symptomsBySystem и perSystemSubgrades)
+        viewModel.toggleSymptom(symptom)
+        
+        // Обновляем ячейку через reloadRows для гарантированного обновления
+        tableView.reloadRows(at: [indexPath], with: .fade)
+        
+        // Обновляем заголовок секции после небольшой задержки, чтобы убедиться что данные обновлены
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
         }
     }
 }

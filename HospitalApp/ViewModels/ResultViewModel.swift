@@ -12,18 +12,27 @@ class ResultViewModel {
     @Published var severityResult: SeverityResult?
     @Published var selectedSymptoms: [Symptom] = []
     @Published var vitals: Vitals = Vitals()
+    @Published var perSystemSubgrades: [SystemType: Subgrade] = [:]
     
     private let repository: ExaminationRepositoryProtocol
+    private let severityEngine: SeverityEngine
     
-    init(repository: ExaminationRepositoryProtocol = ExaminationRepository()) {
+    init(repository: ExaminationRepositoryProtocol = ExaminationRepository(), 
+         severityEngine: SeverityEngine = SeverityEngine()) {
         self.repository = repository
+        self.severityEngine = severityEngine
     }
     
     func calculateSeverity(selectedSymptoms: [Symptom], vitals: Vitals) {
         self.selectedSymptoms = selectedSymptoms
         self.vitals = vitals
-        self.severityResult = SeverityCalculator.calculateSeverity(
-            selectedSymptoms: selectedSymptoms,
+        
+        // Сначала вычисляем субградации
+        perSystemSubgrades = severityEngine.computeSubgrades(selectedSymptoms: selectedSymptoms)
+        
+        // Затем вычисляем финальную степень тяжести
+        severityResult = severityEngine.computeFinalSeverity(
+            perSystem: perSystemSubgrades,
             vitals: vitals
         )
     }

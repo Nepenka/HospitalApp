@@ -59,9 +59,12 @@ class VitalsViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupBindings()
+        setupKeyboardDismiss()
     }
     
     private func setupUI() {
+        // Принудительно устанавливаем светлую тему
+        overrideUserInterfaceStyle = .light
         view.backgroundColor = .systemBackground
         title = "Витальные данные"
         
@@ -70,18 +73,18 @@ class VitalsViewController: UIViewController {
         view.addSubview(continueButton)
         
         // Создаем поля ввода
-        let fields = [
-            ("Возраст (лет)", "age"),
-            ("Систолическое АД (мм рт.ст.)", "systolicBP"),
-            ("Диастолическое АД (мм рт.ст.)", "diastolicBP"),
-            ("SpO2 (%)", "spO2"),
-            ("ЧСС (уд/мин)", "heartRate"),
-            ("ЧД (в мин)", "respiratoryRate"),
-            ("GCS (3-15)", "gcs")
+        let fields: [(title: String, key: String, placeholder: String)] = [
+            ("Возраст (лет)", "age", "Например: 25"),
+            ("Систолическое АД (мм рт.ст.)", "systolicBP", "Например: 120"),
+            ("Диастолическое АД (мм рт.ст.)", "diastolicBP", "Например: 80"),
+            ("SpO2 (%)", "spO2", "Например: 98"),
+            ("ЧСС (уд/мин)", "heartRate", "Например: 75"),
+            ("ЧД (в мин)", "respiratoryRate", "Например: 16"),
+            ("GCS (3-15)", "gcs", "Например: 15")
         ]
         
-        for (title, key) in fields {
-            let field = createInputField(title: title, key: key)
+        for fieldInfo in fields {
+            let field = createInputField(title: fieldInfo.title, key: fieldInfo.key, placeholder: fieldInfo.placeholder)
             inputFields.append(field)
             contentView.addArrangedSubview(field)
         }
@@ -116,7 +119,7 @@ class VitalsViewController: UIViewController {
         ])
     }
     
-    private func createInputField(title: String, key: String) -> UITextField {
+    private func createInputField(title: String, key: String, placeholder: String) -> UITextField {
         let container = UIView()
         container.translatesAutoresizingMaskIntoConstraints = false
         
@@ -129,7 +132,7 @@ class VitalsViewController: UIViewController {
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.borderStyle = .roundedRect
         textField.keyboardType = .numberPad
-        textField.placeholder = "Введите значение"
+        textField.placeholder = placeholder
         textField.addTarget(self, action: #selector(textFieldChanged(_:)), for: .editingChanged)
         
         fieldKeyMap[textField] = key
@@ -218,6 +221,16 @@ class VitalsViewController: UIViewController {
             return
         }
         coordinator.showResult(selectedSymptoms: selectedSymptoms, vitals: viewModel.vitals)
+    }
+    
+    private func setupKeyboardDismiss() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
     
     private func showAlert(message: String) {
