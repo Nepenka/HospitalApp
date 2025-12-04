@@ -12,14 +12,29 @@ struct Symptom: Identifiable, Codable, Hashable {
     let name: String
     let system: SystemType
     let defaultSubgradeHint: Subgrade
+    /// Переопределённая субградация (например, выбранный вариант "генерализованный" и т.п.)
+    var overrideSubgrade: Subgrade?
     var isSelected: Bool
     
-    init(id: UUID = UUID(), name: String, system: SystemType, defaultSubgradeHint: Subgrade, isSelected: Bool = false) {
+    init(
+        id: UUID = UUID(),
+        name: String,
+        system: SystemType,
+        defaultSubgradeHint: Subgrade,
+        overrideSubgrade: Subgrade? = nil,
+        isSelected: Bool = false
+    ) {
         self.id = id
         self.name = name
         self.system = system
         self.defaultSubgradeHint = defaultSubgradeHint
+        self.overrideSubgrade = overrideSubgrade
         self.isSelected = isSelected
+    }
+    
+    /// Фактическая субградация, используемая в расчётах
+    var effectiveSubgrade: Subgrade {
+        return overrideSubgrade ?? defaultSubgradeHint
     }
 }
 

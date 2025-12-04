@@ -222,16 +222,22 @@ extension SymptomsViewController: UITableViewDataSource, UITableViewDelegate {
         
         let symptom = symptomsInSystem[indexPath.row]
         
-        // Переключаем симптом (это синхронно обновит symptomsBySystem и perSystemSubgrades)
-        viewModel.toggleSymptom(symptom)
-        
-        // Обновляем ячейку через reloadRows для гарантированного обновления
-        tableView.reloadRows(at: [indexPath], with: .fade)
-        
-        // Обновляем заголовок секции после небольшой задержки, чтобы убедиться что данные обновлены
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
+        // Если симптом относится к группе с дополнительными вариантами (dropdown),
+        // показываем список вариантов. Иначе просто переключаем.
+        if let options = dropdownOptions(for: symptom) {
+            presentOptions(for: symptom, options: options, indexPath: indexPath)
+        } else {
+            // Переключаем симптом (это синхронно обновит symptomsBySystem и perSystemSubgrades)
+            viewModel.toggleSymptom(symptom)
+            
+            // Обновляем ячейку через reloadRows для гарантированного обновления
+            tableView.reloadRows(at: [indexPath], with: .fade)
+            
+            // Обновляем заголовок секции после небольшой задержки, чтобы убедиться что данные обновлены
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
+            }
         }
     }
 }
@@ -285,6 +291,110 @@ class SymptomCell: UITableViewCell {
         nameLabel.text = symptom.name
         checkmarkView.backgroundColor = symptom.isSelected ? .systemGreen : .systemBackground
         checkmarkView.layer.borderColor = symptom.isSelected ? UIColor.systemGreen.cgColor : UIColor.systemGray4.cgColor
+    }
+}
+
+// MARK: - Dropdown options for complex symptoms
+
+private extension SymptomsViewController {
+    
+    struct SymptomOption {
+        let title: String
+        let subgrade: Subgrade
+    }
+    
+    /// Возвращает набор вариантов для сложных симптомов (зуд, эритема, крапивница, и т.п.)
+    func dropdownOptions(for symptom: Symptom) -> [SymptomOption]? {
+        switch symptom.name {
+        case "Зуд":
+            return [
+                SymptomOption(title: "Периодически (<50% ППТ)", subgrade: .light),
+                SymptomOption(title: "Локализованный (<50% ППТ)", subgrade: .light),
+                SymptomOption(title: "Постоянный", subgrade: .moderate),
+                SymptomOption(title: "Генерализованный (≥50% ППТ)", subgrade: .moderate)
+            ]
+        case "Эритема":
+            return [
+                SymptomOption(title: "Локализованная (<50% ППТ)", subgrade: .light),
+                SymptomOption(title: "Генерализованная (≥50% ППТ)", subgrade: .moderate)
+            ]
+        case "Крапивница":
+            return [
+                SymptomOption(title: "Локализованная (<50% ППТ)", subgrade: .light),
+                SymptomOption(title: "Генерализованная (≥50% ППТ)", subgrade: .moderate)
+            ]
+        case "Отек языка":
+            return [
+                SymptomOption(title: "Анатомические ориентиры сохранены", subgrade: .light),
+                SymptomOption(title: "Анатомические ориентиры сглажены", subgrade: .moderate),
+                SymptomOption(title: "Анатомические ориентиры не видны", subgrade: .severe)
+            ]
+        case "Боль в животе":
+            return [
+                SymptomOption(title: "Эпизодичные", subgrade: .light),
+                SymptomOption(title: "Постоянные, сильные", subgrade: .moderate)
+            ]
+        case "Тошнота":
+            return [
+                SymptomOption(title: "Эпизодичная", subgrade: .light),
+                SymptomOption(title: "Постоянная", subgrade: .moderate)
+            ]
+        case "Рвота":
+            return [
+                SymptomOption(title: "1–2 раза", subgrade: .light),
+                SymptomOption(title: "Более 2-х раз", subgrade: .moderate)
+            ]
+        case "Диарея":
+            return [
+                SymptomOption(title: "1–2 раза", subgrade: .light),
+                SymptomOption(title: "Более 2-х раз", subgrade: .moderate)
+            ]
+        case "Одышка":
+            return [
+                SymptomOption(title: "Без ПРД", subgrade: .light),
+                SymptomOption(title: "С ПРД", subgrade: .moderate)
+            ]
+        case "Стридор":
+            return [
+                SymptomOption(title: "Без ПРД", subgrade: .moderate),
+                SymptomOption(title: "С ПРД", subgrade: .severe)
+            ]
+        case "Кашель":
+            return [
+                SymptomOption(title: "Вновь появившийся", subgrade: .light),
+                SymptomOption(title: "Персистирующий", subgrade: .moderate)
+            ]
+        default:
+            return nil
+        }
+    }
+    
+    func presentOptions(for symptom: Symptom, options: [SymptomOption], indexPath: IndexPath) {
+        let alert = UIAlertController(title: symptom.name, message: "Выберите вариант", preferredStyle: .actionSheet)
+        
+        for option in options {
+            alert.addAction(UIAlertAction(title: option.title + " (\(option.subgrade.shortName))",
+                                          style: .default,
+                                          handler: { [weak self] _ in
+                guard let self = self else { return }
+                self.viewModel.setOverrideSubgrade(for: symptom, subgrade: option.subgrade)
+                // Обновляем строку и заголовок секции
+                self.tableView.reloadRows(at: [indexPath], with: .fade)
+                self.tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
+            }))
+        }
+        
+        // Вариант отмены выбора симптома
+        alert.addAction(UIAlertAction(title: "Снять выбор", style: .destructive, handler: { [weak self] _ in
+            guard let self = self else { return }
+            self.viewModel.toggleSymptom(symptom)
+            self.tableView.reloadRows(at: [indexPath], with: .fade)
+            self.tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel, handler: nil))
+        
+        present(alert, animated: true)
     }
 }
 

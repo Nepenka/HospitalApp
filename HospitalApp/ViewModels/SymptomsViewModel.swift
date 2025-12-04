@@ -62,10 +62,26 @@ class SymptomsViewModel {
     
     func toggleSymptom(_ symptom: Symptom) {
         if let index = symptoms.firstIndex(where: { $0.id == symptom.id }) {
-            symptoms[index].isSelected.toggle()
+            // Если снимаем выбор, сбрасываем override
+            if symptoms[index].isSelected {
+                symptoms[index].isSelected = false
+                symptoms[index].overrideSubgrade = nil
+            } else {
+                symptoms[index].isSelected = true
+            }
             // Синхронно обновляем symptomsBySystem для немедленного доступа
             updateSymptomsBySystem()
             // Синхронно обновляем субградации
+            updateSubgrades()
+        }
+    }
+    
+    /// Устанавливает override-субградацию для симптома и помечает его выбранным
+    func setOverrideSubgrade(for symptom: Symptom, subgrade: Subgrade) {
+        if let index = symptoms.firstIndex(where: { $0.id == symptom.id }) {
+            symptoms[index].overrideSubgrade = subgrade
+            symptoms[index].isSelected = true
+            updateSymptomsBySystem()
             updateSubgrades()
         }
     }

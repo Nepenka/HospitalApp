@@ -35,13 +35,14 @@ class SeverityEngine {
         for (system, symptoms) in symptomsBySystem {
             guard !symptoms.isEmpty else { continue }
             
-            // Подсчитываем симптомы по их субградациям
+            // Подсчитываем симптомы по их фактическим субградациям (с учётом override)
             var lightCount = 0
             var moderateCount = 0
             var severeCount = 0
             
             for symptom in symptoms {
-                switch symptom.defaultSubgradeHint {
+                let subgrade = symptom.effectiveSubgrade
+                switch subgrade {
                 case .light:
                     lightCount += 1
                 case .moderate:
