@@ -16,6 +16,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         let window = UIWindow(windowScene: windowScene)
         
+        // Принудительно устанавливаем светлую тему
+        window.overrideUserInterfaceStyle = .light
+        
         let navigationController = UINavigationController()
         coordinator = AppCoordinator(navigationController: navigationController)
         coordinator?.start()

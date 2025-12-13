@@ -22,4 +22,3 @@ struct Examination: Codable {
         self.severityResult = severityResult
     }
 }
-

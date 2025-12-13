@@ -43,4 +43,3 @@ class ExaminationRepository: ExaminationRepositoryProtocol {
         }
     }
 }
-

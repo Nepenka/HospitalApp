@@ -69,4 +69,3 @@ class VitalsViewModel {
         vitals.gcs = value
     }
 }
-

@@ -19,4 +19,3 @@ enum SystemType: String, CaseIterable, Codable {
         return rawValue
     }
 }
-

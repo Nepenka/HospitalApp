@@ -80,6 +80,8 @@ class ResultViewController: UIViewController {
     }
     
     private func setupUI() {
+        // Принудительно устанавливаем светлую тему
+        overrideUserInterfaceStyle = .light
         view.backgroundColor = .systemGroupedBackground
         title = "Результат оценки"
         
@@ -131,6 +133,9 @@ class ResultViewController: UIViewController {
     private func updateUI(with result: SeverityResult) {
         severityCard.subviews.forEach { $0.removeFromSuperview() }
         
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        
         let stackView = UIStackView()
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
@@ -140,58 +145,76 @@ class ResultViewController: UIViewController {
         
         // Степень тяжести
         let levelLabel = UILabel()
-        levelLabel.text = result.level.displayName
+        if result.severityGrade > 0 {
+            levelLabel.text = "Степень \(result.severityGrade)"
+        } else {
+            levelLabel.text = "Степень 0 (нет реакции)"
+        }
         levelLabel.font = .systemFont(ofSize: 28, weight: .bold)
-        levelLabel.textColor = colorForSeverity(result.level)
+        levelLabel.textColor = colorForSeverityGrade(result.severityGrade)
         levelLabel.textAlignment = .center
         
-        let descriptionLabel = UILabel()
-        descriptionLabel.text = result.description
-        descriptionLabel.font = .systemFont(ofSize: 20, weight: .semibold)
-        descriptionLabel.textAlignment = .center
-        
-        // Пораженные системы
+        // Пораженные системы с субградациями
         let systemsLabel = UILabel()
-        systemsLabel.text = "Пораженные системы:\n" + result.affectedSystems.map { $0.displayName }.joined(separator: ", ")
+        let activeSystems = result.perSystemSubgrades.filter { $0.value != .none }
+        if !activeSystems.isEmpty {
+            var systemsText = "Субградации по системам:\n"
+            for (system, subgrade) in activeSystems.sorted(by: { $0.key.displayName < $1.key.displayName }) {
+                systemsText += "• \(system.displayName): \(subgrade.displayName)\n"
+            }
+            systemsLabel.text = systemsText
+        } else {
+            systemsLabel.text = "Нет пораженных систем"
+        }
         systemsLabel.font = .systemFont(ofSize: 16)
         systemsLabel.numberOfLines = 0
-        systemsLabel.textAlignment = .center
+        systemsLabel.textAlignment = .left
         
         // Объяснение
         let explanationLabel = UILabel()
         explanationLabel.text = result.explanation
-        explanationLabel.font = .systemFont(ofSize: 16)
+        explanationLabel.font = .systemFont(ofSize: 14)
         explanationLabel.numberOfLines = 0
-        explanationLabel.textAlignment = .center
+        explanationLabel.textAlignment = .left
         explanationLabel.textColor = .systemGray
         
         stackView.addArrangedSubview(levelLabel)
-        stackView.addArrangedSubview(descriptionLabel)
         stackView.addArrangedSubview(systemsLabel)
         stackView.addArrangedSubview(explanationLabel)
         
-        severityCard.addSubview(stackView)
+        scrollView.addSubview(stackView)
+        severityCard.addSubview(scrollView)
         
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: severityCard.topAnchor),
-            stackView.leadingAnchor.constraint(equalTo: severityCard.leadingAnchor),
-            stackView.trailingAnchor.constraint(equalTo: severityCard.trailingAnchor),
-            stackView.bottomAnchor.constraint(equalTo: severityCard.bottomAnchor)
+            scrollView.topAnchor.constraint(equalTo: severityCard.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: severityCard.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: severityCard.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: severityCard.bottomAnchor),
+            
+            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
         ])
     }
     
-    private func colorForSeverity(_ level: SeverityLevel) -> UIColor {
-        switch level {
-        case .level1:
+    private func colorForSeverityGrade(_ grade: Int) -> UIColor {
+        switch grade {
+        case 0:
+            return .systemGray
+        case 1:
             return .systemGreen
-        case .level2:
+        case 2:
             return .systemYellow
-        case .level3:
+        case 3:
             return .systemOrange
-        case .level4:
+        case 4:
             return .systemRed
-        case .level5:
+        case 5:
             return .systemPurple
+        default:
+            return .systemGray
         }
     }
     
@@ -212,4 +235,3 @@ class ResultViewController: UIViewController {
         present(alert, animated: true)
     }
 }
-

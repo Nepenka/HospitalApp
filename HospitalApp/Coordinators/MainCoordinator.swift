@@ -41,4 +41,3 @@ class MainCoordinator: Coordinator {
         navigationController.popToRootViewController(animated: true)
     }
 }
-

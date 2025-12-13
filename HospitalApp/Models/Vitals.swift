@@ -19,8 +19,8 @@ struct Vitals: Codable {
     // Вычисляемые свойства
     var meanArterialPressure: Double? {
         guard let sys = systolicBP, let dia = diastolicBP else { return nil }
-        // срАД = (2 × ДАД + САД) / 3
-        return (2.0 * Double(dia) + Double(sys)) / 3.0
+        // срАД = (1/3) × SBP + (2/3) × DBP
+        return (1.0/3.0) * Double(sys) + (2.0/3.0) * Double(dia)
     }
     
     var isHypotension: Bool {
@@ -40,8 +40,7 @@ struct Vitals: Codable {
     }
     
     var isValid: Bool {
-        return age != nil && systolicBP != nil && diastolicBP != nil && 
+        return age != nil && systolicBP != nil && diastolicBP != nil &&
                spO2 != nil && heartRate != nil && respiratoryRate != nil && gcs != nil
     }
 }
-
