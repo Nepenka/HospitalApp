@@ -121,8 +121,8 @@ extension Symptom {
             Symptom(name: "Судороги", system: .neurological, defaultSubgradeHint: .severe),
             Symptom(name: "Снижение мышечного тонуса, «обмякание»", system: .neurological, defaultSubgradeHint: .severe),
             Symptom(name: "Обморок", system: .neurological, defaultSubgradeHint: .severe),
-            Symptom(name: "Недержание мочи»", system: .neurological, defaultSubgradeHint: .severe),
-            Symptom(name: "Недержание кала»", system: .neurological, defaultSubgradeHint: .severe),
+            Symptom(name: "Недержание мочи", system: .neurological, defaultSubgradeHint: .severe),
+            Symptom(name: "Недержание кала", system: .neurological, defaultSubgradeHint: .severe),
 
 
             
@@ -132,7 +132,7 @@ extension Symptom {
             Symptom(name: "Першение в горле или дискомфорт", system: .respiratory, defaultSubgradeHint: .light),
             Symptom(name: "Дисфония, хриплый крик", system: .respiratory, defaultSubgradeHint: .light),
             Symptom(name: "Лающий кашель", system: .respiratory, defaultSubgradeHint: .light),
-            Symptom(name: "Появление одышки", system: .respiratory, defaultSubgradeHint: .light),
+            Symptom(name: "Одышки", system: .respiratory, defaultSubgradeHint: .light),
 
 
             

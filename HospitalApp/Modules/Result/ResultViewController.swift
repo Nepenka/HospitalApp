@@ -85,8 +85,8 @@ class ResultViewController: UIViewController {
         view.backgroundColor = .systemGroupedBackground
         title = "Результат оценки"
         
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
+
+        view.addSubview(contentView)
         view.addSubview(saveButton)
         view.addSubview(newExaminationButton)
         
@@ -96,16 +96,11 @@ class ResultViewController: UIViewController {
         newExaminationButton.addTarget(self, action: #selector(newExaminationTapped), for: .touchUpInside)
         
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: saveButton.topAnchor, constant: -16),
-            
-            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            contentView.topAnchor.constraint(equalTo: view.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: saveButton.bottomAnchor, constant: -50),
+            contentView.widthAnchor.constraint(equalTo: view.widthAnchor),
             
             severityCard.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
             
