@@ -97,4 +97,12 @@ class SymptomsViewModel {
     func getSubgrade(for system: SystemType) -> Subgrade {
         return perSystemSubgrades[system] ?? .none
     }
+    
+    func reset() {
+        symptoms = Symptom.defaultSymptoms()
+        selectedSymptomsCount = 0
+        perSystemSubgrades = [:]
+        updateSymptomsBySystem()
+        updateSubgrades()
+    }
 }

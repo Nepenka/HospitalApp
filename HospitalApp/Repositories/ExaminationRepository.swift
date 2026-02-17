@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreData
 
 protocol ExaminationRepositoryProtocol {
     func saveExamination(_ examination: Examination)
@@ -14,32 +15,59 @@ protocol ExaminationRepositoryProtocol {
 }
 
 class ExaminationRepository: ExaminationRepositoryProtocol {
-    private let userDefaults = UserDefaults.standard
-    private let examinationsKey = "saved_examinations"
+    private let context: NSManagedObjectContext
+    
+    init(context: NSManagedObjectContext = CoreDataStack.shared.context) {
+        self.context = context
+    }
     
     func saveExamination(_ examination: Examination) {
-        var examinations = getAllExaminations()
-        examinations.append(examination)
+        let entity = ExaminationEntity(context: context)
+        entity.id = examination.id
+        entity.date = examination.date
+        entity.severityGrade = Int16(examination.severityResult.severityGrade)
         
-        if let encoded = try? JSONEncoder().encode(examinations) {
-            userDefaults.set(encoded, forKey: examinationsKey)
+        if let sys = examination.vitals.systolicBP {
+            entity.systolicBP = Int16(sys)
         }
+        
+        if let data = try? JSONEncoder().encode(examination) {
+            entity.payload = data
+        }
+        
+        CoreDataStack.shared.saveContext()
     }
     
     func getAllExaminations() -> [Examination] {
-        guard let data = userDefaults.data(forKey: examinationsKey),
-              let examinations = try? JSONDecoder().decode([Examination].self, from: data) else {
+        let request: NSFetchRequest<ExaminationEntity> = ExaminationEntity.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        
+        guard let entities = try? context.fetch(request) else {
             return []
         }
-        return examinations
+        
+        var result: [Examination] = []
+        let decoder = JSONDecoder()
+        
+        for entity in entities {
+            if let data = entity.payload,
+               let examination = try? decoder.decode(Examination.self, from: data) {
+                result.append(examination)
+            }
+        }
+        
+        return result
     }
     
     func deleteExamination(id: UUID) {
-        var examinations = getAllExaminations()
-        examinations.removeAll { $0.id == id }
+        let request: NSFetchRequest<ExaminationEntity> = ExaminationEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         
-        if let encoded = try? JSONEncoder().encode(examinations) {
-            userDefaults.set(encoded, forKey: examinationsKey)
+        if let entities = try? context.fetch(request) {
+            for entity in entities {
+                context.delete(entity)
+            }
+            CoreDataStack.shared.saveContext()
         }
     }
 }

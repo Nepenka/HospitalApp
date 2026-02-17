@@ -38,6 +38,16 @@ class MainCoordinator: Coordinator {
     }
     
     func startNewExamination() {
+        if let rootVC = navigationController.viewControllers.first as? SymptomsViewController {
+            rootVC.reset()
+        }
         navigationController.popToRootViewController(animated: true)
+    }
+    
+    func showExaminationHistory() {
+        let viewModel = ExaminationViewModel()
+        let controller = ExaminationsHistoryViewController(viewModel: viewModel, coordinator: self)
+        navigationController.pushViewController(controller, animated: true)
+        
     }
 }

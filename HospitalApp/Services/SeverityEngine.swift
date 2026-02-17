@@ -67,7 +67,11 @@ class SeverityEngine {
             }
             // Правило 3: Иначе если есть >= 1 Л → Л, но если количество Л >= N → повысить до У
             else if lightCount > 0 {
-                if lightCount >= config.lightToModerateThreshold {
+                // Повышение Л+Л→У только для Кожа, Слизистые, ЖКТ
+                let systemsWithLightAggregation: [SystemType] = [.skin, .mucous, .gastrointestinal]
+                
+                if systemsWithLightAggregation.contains(system),
+                   lightCount >= config.lightToModerateThreshold {
                     finalSubgrade = .moderate
                 } else {
                     finalSubgrade = .light

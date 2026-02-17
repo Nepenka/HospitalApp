@@ -62,6 +62,9 @@ class SymptomsViewController: UIViewController {
         view.backgroundColor = .systemBackground
         title = "Симптомы"
         
+        let historyItem = UIBarButtonItem(title: "История", style: .plain, target: self, action: #selector(historyButtonTapped))
+        navigationItem.rightBarButtonItem = historyItem
+        
         view.addSubview(tableView)
         view.addSubview(continueButton)
         view.addSubview(selectedCountLabel)
@@ -109,6 +112,11 @@ class SymptomsViewController: UIViewController {
             .store(in: &cancellables)
     }
     
+    func reset() {
+        viewModel.reset()
+        tableView.reloadData()
+    }
+    
     @objc private func continueTapped() {
         let selectedSymptoms = viewModel.getSelectedSymptoms()
         guard !selectedSymptoms.isEmpty else {
@@ -116,6 +124,10 @@ class SymptomsViewController: UIViewController {
             return
         }
         coordinator.showVitalsInput(selectedSymptoms: selectedSymptoms)
+    }
+    
+    @objc private func historyButtonTapped() {
+        coordinator.showExaminationHistory()
     }
     
     private func showAlert(message: String) {

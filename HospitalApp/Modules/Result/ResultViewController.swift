@@ -215,7 +215,9 @@ class ResultViewController: UIViewController {
     
     @objc private func saveTapped() {
         viewModel.saveExamination()
-        showAlert(message: "Осмотр сохранен", completion: nil)
+        showAlert(message: "Осмотр сохранен", completion: {
+            self.coordinator.showExaminationHistory()
+        })
     }
     
     @objc private func newExaminationTapped() {
