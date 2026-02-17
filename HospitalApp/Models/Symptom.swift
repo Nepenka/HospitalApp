@@ -132,7 +132,7 @@ extension Symptom {
             Symptom(name: "Першение в горле или дискомфорт", system: .respiratory, defaultSubgradeHint: .light),
             Symptom(name: "Дисфония, хриплый крик", system: .respiratory, defaultSubgradeHint: .light),
             Symptom(name: "Лающий кашель", system: .respiratory, defaultSubgradeHint: .light),
-            Symptom(name: "Одышки", system: .respiratory, defaultSubgradeHint: .light),
+            Symptom(name: "Одышка", system: .respiratory, defaultSubgradeHint: .light),
 
 
             
