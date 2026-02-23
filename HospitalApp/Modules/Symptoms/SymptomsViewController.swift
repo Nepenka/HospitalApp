@@ -364,7 +364,8 @@ private extension SymptomsViewController {
         case "Одышка":
             return [
                 SymptomOption(title: "Без ПРД", subgrade: .light),
-                SymptomOption(title: "С ПРД", subgrade: .moderate)
+                SymptomOption(title: "С ПРД", subgrade: .moderate),
+                SymptomOption(title: "С ДН, <немое легкое>", subgrade: .severe)
             ]
         case "Стридор":
             return [
