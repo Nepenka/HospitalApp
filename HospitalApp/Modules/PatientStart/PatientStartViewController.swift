@@ -16,14 +16,6 @@ class PatientStartViewController: UIViewController {
         return stackView
     }()
     
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "Данные пациента"
-        label.font = .systemFont(ofSize: 20, weight: .bold)
-        label.textColor = .label
-        return label
-    }()
     
     private let startButton: UIButton = {
         let button = UIButton(type: .system)
@@ -66,16 +58,18 @@ class PatientStartViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupBindings()
+        setupKeyboardDismiss()
     }
     
     private func setupUI() {
         overrideUserInterfaceStyle = .light
         view.backgroundColor = .systemBackground
+        navigationItem.title = "Данные пациента"
+        navigationController?.navigationBar.prefersLargeTitles = true
         
         
         view.addSubview(contentView)
         
-        contentView.addArrangedSubview(titleLabel)
         contentView.addArrangedSubview(configureField(fullNameField, placeholder: "ФИО пациента"))
         contentView.addArrangedSubview(configureField(preliminaryDiagnosisField, placeholder: "Предварительный диагноз"))
         preliminaryDiagnosisField.autocapitalizationType = .sentences
@@ -138,7 +132,7 @@ class PatientStartViewController: UIViewController {
             showAlert("Заполните ФИО пациента и предварительный диагноз")
             return
         }
-        coordinator.showSymptoms(for: patient)
+        coordinator.showSymptoms(for: patient, initialDiagnosis: viewModel.cleanPreliminaryDiagnosis)
     }
     
     @objc private func historyTapped() {
@@ -149,5 +143,25 @@ class PatientStartViewController: UIViewController {
         let alert = UIAlertController(title: "Внимание", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
+    }
+    
+    func reset() {
+        viewModel.reset()
+        fullNameField.text = ""
+        preliminaryDiagnosisField.text = ""
+    }
+    
+    private func setupKeyboardDismiss() {
+        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        swipeDown.direction = .down
+        view.addGestureRecognizer(swipeDown)
+        
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 }

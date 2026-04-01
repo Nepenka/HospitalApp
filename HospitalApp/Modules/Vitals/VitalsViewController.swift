@@ -12,11 +12,14 @@ class VitalsViewController: UIViewController {
     private let viewModel: VitalsViewModel
     private let selectedSymptoms: [Symptom]
     private let coordinator: MainCoordinator
+    private let initialDiagnosis: String?
+    private let editingExaminationId: UUID?
     private var cancellables = Set<AnyCancellable>()
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.keyboardDismissMode = .interactive
         return scrollView
     }()
     
@@ -43,12 +46,24 @@ class VitalsViewController: UIViewController {
     
     private var inputFields: [UITextField] = []
     private var fieldKeyMap: [UITextField: String] = [:]
+    private var ageMonthsRow: UIView?
+    private var ageYearsTextField: UITextField?
+    private var ageMonthsTextField: UITextField?
     
-    init(viewModel: VitalsViewModel, selectedSymptoms: [Symptom], coordinator: MainCoordinator) {
+    init(
+        viewModel: VitalsViewModel,
+        selectedSymptoms: [Symptom],
+        coordinator: MainCoordinator,
+        initialDiagnosis: String? = nil,
+        editingExaminationId: UUID? = nil
+    ) {
         self.viewModel = viewModel
         self.selectedSymptoms = selectedSymptoms
         self.coordinator = coordinator
+        self.initialDiagnosis = initialDiagnosis
+        self.editingExaminationId = editingExaminationId
         super.init(nibName: nil, bundle: nil)
+        title = "Витальные данные"
     }
     
     required init?(coder: NSCoder) {
@@ -66,7 +81,7 @@ class VitalsViewController: UIViewController {
         // Принудительно устанавливаем светлую тему
         overrideUserInterfaceStyle = .light
         view.backgroundColor = .systemBackground
-        title = "Витальные данные"
+        navigationItem.largeTitleDisplayMode = .never
         
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
@@ -75,7 +90,7 @@ class VitalsViewController: UIViewController {
         // Создаем поля ввода
         let fields: [(title: String, key: String, placeholder: String)] = [
             ("Возраст (лет)", "ageYears", "Сколько лет: "),
-            ("Возраст (месяцев, если <1 года)", "ageMonths", "0...11"),
+            ("Возраст (месяцев, если <1 года)", "ageMonths", "Сколько месяцев(0..11)"),
             ("Исходное систолическое АД (для взрослых, опц.)", "baselineSystolicBP", "Исходное САД"),
             ("Систолическое АД (мм рт.ст.)", "systolicBP", "Систолическое АД (мм рт.ст.): "),
             ("Диастолическое АД (мм рт.ст.)", "diastolicBP", "Диастолическое АД (мм рт.ст.): "),
@@ -86,10 +101,21 @@ class VitalsViewController: UIViewController {
         ]
         
         for fieldInfo in fields {
-            let field = createInputField(title: fieldInfo.title, key: fieldInfo.key, placeholder: fieldInfo.placeholder)
-            inputFields.append(field)
-            contentView.addArrangedSubview(field)
+            let (container, textField) = createInputField(title: fieldInfo.title, key: fieldInfo.key, placeholder: fieldInfo.placeholder)
+            inputFields.append(textField)
+            contentView.addArrangedSubview(container)
+            applyInitialValue(for: textField, key: fieldInfo.key)
+            
+            if fieldInfo.key == "ageYears" {
+                ageYearsTextField = textField
+            }
+            if fieldInfo.key == "ageMonths" {
+                ageMonthsRow = container
+                ageMonthsTextField = textField
+            }
         }
+        
+        updateMonthsRowVisibility(animated: false)
         
         // Добавляем информационные метки
         let mapLabel = createInfoLabel(text: "срАД: —")
@@ -129,7 +155,7 @@ class VitalsViewController: UIViewController {
         ])
     }
     
-    private func createInputField(title: String, key: String, placeholder: String) -> UITextField {
+    private func createInputField(title: String, key: String, placeholder: String) -> (UIView, UITextField) {
         let container = UIView()
         container.translatesAutoresizingMaskIntoConstraints = false
         
@@ -162,7 +188,34 @@ class VitalsViewController: UIViewController {
             textField.heightAnchor.constraint(equalToConstant: 44)
         ])
         
-        return textField
+        return (container, textField)
+    }
+    
+    /// У детей младше 1 года возраст задаётся как годы = 0 и месяцы 0…11. При возрасте ≥ 1 года месяцы не используются.
+    private func updateMonthsRowVisibility(animated: Bool) {
+        guard let monthsRow = ageMonthsRow else { return }
+        
+        let years = viewModel.vitals.ageYears
+        let hideMonths = years.map { $0 >= 1 } ?? false
+        
+        if hideMonths {
+            viewModel.updateAgeMonths(nil)
+            ageMonthsTextField?.text = ""
+            ageMonthsTextField?.isEnabled = false
+        } else {
+            ageMonthsTextField?.isEnabled = true
+        }
+        
+        let updates = {
+            monthsRow.alpha = hideMonths ? 0 : 1
+            monthsRow.isHidden = hideMonths
+        }
+        
+        if animated {
+            UIView.animate(withDuration: 0.25, animations: updates)
+        } else {
+            updates()
+        }
     }
     
     private func createInfoLabel(text: String) -> UILabel {
@@ -226,6 +279,7 @@ class VitalsViewController: UIViewController {
         switch key {
         case "ageYears":
             viewModel.updateAge(value)
+            updateMonthsRowVisibility(animated: true)
         case "ageMonths":
             viewModel.updateAgeMonths(value)
         case "baselineSystolicBP":
@@ -252,13 +306,47 @@ class VitalsViewController: UIViewController {
             showAlert(message: "Пожалуйста, заполните все поля")
             return
         }
-        coordinator.showResult(selectedSymptoms: selectedSymptoms, vitals: viewModel.vitals)
+        coordinator.showResult(
+            selectedSymptoms: selectedSymptoms,
+            vitals: viewModel.vitals,
+            initialDiagnosis: initialDiagnosis,
+            editingExaminationId: editingExaminationId
+        )
     }
     
     private func setupKeyboardDismiss() {
+        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        swipeDown.direction = .down
+        view.addGestureRecognizer(swipeDown)
+        
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tapGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(tapGesture)
+    }
+    
+    private func applyInitialValue(for field: UITextField, key: String) {
+        switch key {
+        case "ageYears":
+            field.text = viewModel.vitals.ageYears.map(String.init)
+        case "ageMonths":
+            field.text = viewModel.vitals.ageMonths.map(String.init)
+        case "baselineSystolicBP":
+            field.text = viewModel.vitals.baselineSystolicBP.map(String.init)
+        case "systolicBP":
+            field.text = viewModel.vitals.systolicBP.map(String.init)
+        case "diastolicBP":
+            field.text = viewModel.vitals.diastolicBP.map(String.init)
+        case "spO2":
+            field.text = viewModel.vitals.spO2.map(String.init)
+        case "heartRate":
+            field.text = viewModel.vitals.heartRate.map(String.init)
+        case "respiratoryRate":
+            field.text = viewModel.vitals.respiratoryRate.map(String.init)
+        case "gcs":
+            field.text = viewModel.vitals.gcs.map(String.init)
+        default:
+            break
+        }
     }
     
     @objc private func dismissKeyboard() {

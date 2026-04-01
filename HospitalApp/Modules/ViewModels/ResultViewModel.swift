@@ -15,6 +15,7 @@ class ResultViewModel {
     @Published var patient: Patient?
     @Published var diagnosis: String = ""
     @Published var perSystemSubgrades: [SystemType: Subgrade] = [:]
+    @Published var editingExaminationId: UUID?
     
     private let repository: ExaminationRepositoryProtocol
     private let severityEngine: SeverityEngine
@@ -25,10 +26,20 @@ class ResultViewModel {
         self.severityEngine = severityEngine
     }
     
-    func calculateSeverity(selectedSymptoms: [Symptom], vitals: Vitals, patient: Patient) {
+    func calculateSeverity(
+        selectedSymptoms: [Symptom],
+        vitals: Vitals,
+        patient: Patient,
+        initialDiagnosis: String? = nil,
+        editingExaminationId: UUID? = nil
+    ) {
         self.selectedSymptoms = selectedSymptoms
         self.vitals = vitals
         self.patient = patient
+        self.editingExaminationId = editingExaminationId
+        if let initialDiagnosis {
+            self.diagnosis = initialDiagnosis
+        }
         
         // Сначала вычисляем субградации
         perSystemSubgrades = severityEngine.computeSubgrades(selectedSymptoms: selectedSymptoms)
@@ -53,6 +64,10 @@ class ResultViewModel {
             vitals: vitals,
             severityResult: result
         )
+        
+        if let editingExaminationId {
+            repository.deleteExamination(id: editingExaminationId)
+        }
         
         repository.saveExamination(examination)
     }

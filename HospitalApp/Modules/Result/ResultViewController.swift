@@ -55,9 +55,16 @@ class ResultViewController: UIViewController {
     private let diagnosisField: UITextField = {
         let field = UITextField()
         field.translatesAutoresizingMaskIntoConstraints = false
-        field.borderStyle = .roundedRect
+        field.borderStyle = .none
         field.placeholder = "Диагноз"
         field.autocapitalizationType = .sentences
+        field.backgroundColor = .secondarySystemBackground
+        field.layer.cornerRadius = 14
+        field.layer.masksToBounds = true
+        field.layer.borderWidth = 1.5
+        field.layer.borderColor = UIColor.black.cgColor
+        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+        field.leftViewMode = .always
         return field
     }()
     
@@ -76,6 +83,7 @@ class ResultViewController: UIViewController {
         self.viewModel = viewModel
         self.coordinator = coordinator
         super.init(nibName: nil, bundle: nil)
+        title = "Результат оценки"
     }
     
     required init?(coder: NSCoder) {
@@ -86,13 +94,15 @@ class ResultViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupBindings()
+        diagnosisField.text = viewModel.diagnosis
+        setupKeyboardDismiss()
     }
     
     private func setupUI() {
         // Принудительно устанавливаем светлую тему
         overrideUserInterfaceStyle = .light
         view.backgroundColor = .systemGroupedBackground
-        title = "Результат оценки"
+        navigationItem.largeTitleDisplayMode = .never
         
 
         view.addSubview(contentView)
@@ -234,7 +244,7 @@ class ResultViewController: UIViewController {
         
         viewModel.saveExamination()
         showAlert(message: "Осмотр сохранен", completion: {
-            self.coordinator.showExaminationHistory()
+            self.coordinator.startNewExamination()
         })
     }
     
@@ -248,5 +258,19 @@ class ResultViewController: UIViewController {
             completion?()
         })
         present(alert, animated: true)
+    }
+    
+    private func setupKeyboardDismiss() {
+        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        swipeDown.direction = .down
+        view.addGestureRecognizer(swipeDown)
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 }

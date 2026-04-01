@@ -17,15 +17,28 @@ class SymptomsViewModel {
     private var cancellables = Set<AnyCancellable>()
     private let severityEngine: SeverityEngine
     
-    init(severityEngine: SeverityEngine = SeverityEngine()) {
+    init(severityEngine: SeverityEngine = SeverityEngine(), initialSelectedSymptoms: [Symptom] = []) {
         self.severityEngine = severityEngine
         loadSymptoms()
+        applyInitialSymptoms(initialSelectedSymptoms)
         setupBindings()
     }
     
     private func loadSymptoms() {
         symptoms = Symptom.defaultSymptoms()
         updateSymptomsBySystem()
+    }
+    
+    private func applyInitialSymptoms(_ selectedSymptoms: [Symptom]) {
+        guard !selectedSymptoms.isEmpty else { return }
+        for selected in selectedSymptoms {
+            if let index = symptoms.firstIndex(where: { $0.name == selected.name && $0.system == selected.system }) {
+                symptoms[index].isSelected = true
+                symptoms[index].overrideSubgrade = selected.overrideSubgrade
+            }
+        }
+        updateSymptomsBySystem()
+        updateSubgrades()
     }
     
     private func setupBindings() {

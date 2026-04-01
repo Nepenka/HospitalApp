@@ -48,4 +48,13 @@ class PatientStartViewModel {
         repository.savePatient(patient)
         return patient
     }
+    
+    func reset() {
+        fullName = ""
+        preliminaryDiagnosis = ""
+    }
+    
+    var cleanPreliminaryDiagnosis: String {
+        preliminaryDiagnosis.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }

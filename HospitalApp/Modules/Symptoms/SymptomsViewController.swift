@@ -11,6 +11,9 @@ import Combine
 class SymptomsViewController: UIViewController {
     private let viewModel: SymptomsViewModel
     private let coordinator: MainCoordinator
+    private let initialVitals: Vitals?
+    private let initialDiagnosis: String?
+    private let editingExaminationId: UUID?
     private var cancellables = Set<AnyCancellable>()
     
     private let tableView: UITableView = {
@@ -40,10 +43,20 @@ class SymptomsViewController: UIViewController {
         return label
     }()
     
-    init(viewModel: SymptomsViewModel, coordinator: MainCoordinator) {
+    init(
+        viewModel: SymptomsViewModel,
+        coordinator: MainCoordinator,
+        initialVitals: Vitals? = nil,
+        initialDiagnosis: String? = nil,
+        editingExaminationId: UUID? = nil
+    ) {
         self.viewModel = viewModel
         self.coordinator = coordinator
+        self.initialVitals = initialVitals
+        self.initialDiagnosis = initialDiagnosis
+        self.editingExaminationId = editingExaminationId
         super.init(nibName: nil, bundle: nil)
+        title = "Симптомы"
     }
     
     required init?(coder: NSCoder) {
@@ -60,7 +73,7 @@ class SymptomsViewController: UIViewController {
         // Принудительно устанавливаем светлую тему
         overrideUserInterfaceStyle = .light
         view.backgroundColor = .systemBackground
-        title = "Симптомы"
+        navigationItem.largeTitleDisplayMode = .never
         
         view.addSubview(tableView)
         view.addSubview(continueButton)
@@ -120,7 +133,12 @@ class SymptomsViewController: UIViewController {
             showAlert(message: "Пожалуйста, выберите хотя бы один симптом")
             return
         }
-        coordinator.showVitalsInput(selectedSymptoms: selectedSymptoms)
+        coordinator.showVitalsInput(
+            selectedSymptoms: selectedSymptoms,
+            initialVitals: initialVitals,
+            initialDiagnosis: initialDiagnosis,
+            editingExaminationId: editingExaminationId
+        )
     }
     
     private func showAlert(message: String) {

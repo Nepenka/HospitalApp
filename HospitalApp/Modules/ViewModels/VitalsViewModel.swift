@@ -18,7 +18,8 @@ class VitalsViewModel {
     
     private var cancellables = Set<AnyCancellable>()
     
-    init() {
+    init(initialVitals: Vitals = Vitals()) {
+        vitals = initialVitals
         setupBindings()
     }
     

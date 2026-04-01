@@ -21,33 +21,66 @@ class MainCoordinator: Coordinator {
         navigationController.pushViewController(viewController, animated: false)
     }
     
-    func showSymptoms(for patient: Patient) {
+    func showSymptoms(
+        for patient: Patient,
+        initialSymptoms: [Symptom] = [],
+        initialVitals: Vitals? = nil,
+        initialDiagnosis: String? = nil,
+        editingExaminationId: UUID? = nil
+    ) {
         currentPatient = patient
-        let viewModel = SymptomsViewModel()
-        let viewController = SymptomsViewController(viewModel: viewModel, coordinator: self)
-        navigationController.pushViewController(viewController, animated: true)
-    }
-    
-    func showVitalsInput(selectedSymptoms: [Symptom]) {
-        let viewModel = VitalsViewModel()
-        let viewController = VitalsViewController(
+        let viewModel = SymptomsViewModel(initialSelectedSymptoms: initialSymptoms)
+        let viewController = SymptomsViewController(
             viewModel: viewModel,
-            selectedSymptoms: selectedSymptoms,
-            coordinator: self
+            coordinator: self,
+            initialVitals: initialVitals,
+            initialDiagnosis: initialDiagnosis,
+            editingExaminationId: editingExaminationId
         )
         navigationController.pushViewController(viewController, animated: true)
     }
     
-    func showResult(selectedSymptoms: [Symptom], vitals: Vitals) {
+    func showVitalsInput(
+        selectedSymptoms: [Symptom],
+        initialVitals: Vitals? = nil,
+        initialDiagnosis: String? = nil,
+        editingExaminationId: UUID? = nil
+    ) {
+        let viewModel = VitalsViewModel(initialVitals: initialVitals ?? Vitals())
+        let viewController = VitalsViewController(
+            viewModel: viewModel,
+            selectedSymptoms: selectedSymptoms,
+            coordinator: self,
+            initialDiagnosis: initialDiagnosis,
+            editingExaminationId: editingExaminationId
+        )
+        navigationController.pushViewController(viewController, animated: true)
+    }
+    
+    func showResult(
+        selectedSymptoms: [Symptom],
+        vitals: Vitals,
+        initialDiagnosis: String? = nil,
+        editingExaminationId: UUID? = nil
+    ) {
         guard let patient = currentPatient else { return }
         let viewModel = ResultViewModel()
-        viewModel.calculateSeverity(selectedSymptoms: selectedSymptoms, vitals: vitals, patient: patient)
+        viewModel.calculateSeverity(
+            selectedSymptoms: selectedSymptoms,
+            vitals: vitals,
+            patient: patient,
+            initialDiagnosis: initialDiagnosis,
+            editingExaminationId: editingExaminationId
+        )
         let viewController = ResultViewController(viewModel: viewModel, coordinator: self)
         navigationController.pushViewController(viewController, animated: true)
     }
     
     func startNewExamination() {
         currentPatient = nil
+        if let rootVC = navigationController.viewControllers.first as? PatientStartViewController {
+            rootVC.reset()
+        }
         navigationController.popToRootViewController(animated: true)
     }
     
@@ -56,5 +89,15 @@ class MainCoordinator: Coordinator {
         let controller = ExaminationsHistoryViewController(viewModel: viewModel, coordinator: self)
         navigationController.pushViewController(controller, animated: true)
         
+    }
+    
+    func editExamination(_ examination: Examination) {
+        showSymptoms(
+            for: examination.patient,
+            initialSymptoms: examination.selectedSymptoms,
+            initialVitals: examination.vitals,
+            initialDiagnosis: examination.diagnosis,
+            editingExaminationId: examination.id
+        )
     }
 }

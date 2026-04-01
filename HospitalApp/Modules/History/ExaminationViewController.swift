@@ -13,6 +13,14 @@ class ExaminationsHistoryViewController: UIViewController {
     private let coordinator: MainCoordinator
     private var cancellables = Set<AnyCancellable>()
     
+    private let searchController: UISearchController = {
+        let controller = UISearchController(searchResultsController: nil)
+        controller.obscuresBackgroundDuringPresentation = false
+        controller.searchBar.placeholder = "Поиск по ФИО или дате"
+        controller.searchBar.autocapitalizationType = .none
+        return controller
+    }()
+    
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .grouped)
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -36,15 +44,26 @@ class ExaminationsHistoryViewController: UIViewController {
         setupBindings()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.loadExaminations()
+    }
+    
     private func setupUI() {
         overrideUserInterfaceStyle = .light
         view.backgroundColor = .systemBackground
         title = "История осмотров"
         
+        searchController.searchResultsUpdater = self
+        navigationItem.searchController = searchController
+        navigationItem.hidesSearchBarWhenScrolling = false
+        definesPresentationContext = true
+        
         view.addSubview(tableView)
         
         tableView.dataSource = self
         tableView.delegate = self
+        tableView.keyboardDismissMode = .onDrag
         
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -74,6 +93,34 @@ extension ExaminationsHistoryViewController: UITableViewDataSource, UITableViewD
         let exam = viewModel.examinations[indexPath.row]
         cell.configure(with: exam)
         return cell
+    }
+    
+    func tableView(
+        _ tableView: UITableView,
+        contextMenuConfigurationForRowAt indexPath: IndexPath,
+        point: CGPoint
+    ) -> UIContextMenuConfiguration? {
+        let exam = viewModel.examinations[indexPath.row]
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            guard let self = self else { return UIMenu() }
+            
+            let shareAction = UIAction(title: "Поделиться", image: UIImage(systemName: "square.and.arrow.up")) { _ in
+                let text = "\(exam.patient.fullName)\nДиагноз: \(exam.diagnosis)\nСтепень: \(exam.severityResult.severityGrade)"
+                let activity = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+                self.present(activity, animated: true)
+            }
+            
+            let editAction = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
+                self.coordinator.editExamination(exam)
+            }
+            
+            let deleteAction = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+                self.viewModel.deleteExamination(id: exam.id)
+            }
+            
+            return UIMenu(title: "", children: [shareAction, editAction, deleteAction])
+        }
     }
     
     // при желании можно добавить свайп на удаление:
@@ -126,8 +173,7 @@ class ExaminationCell: UITableViewCell {
     
     func configure(with examination: Examination) {
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
+        formatter.dateFormat = "dd.MM.yyyy HH:mm"
         let dateString = formatter.string(from: examination.date)
         
         let grade = examination.severityResult.severityGrade
@@ -141,5 +187,11 @@ class ExaminationCell: UITableViewCell {
         
         titleLabel.text = "\(examination.patient.fullName) • \(dateString) • Степень \(grade)"
         detailLabel.text = "Диагноз: \(examination.diagnosis)\nСАД: \(systolic)\nСимптомы: \(symptomsText)"
+    }
+}
+
+extension ExaminationsHistoryViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+        viewModel.searchText = searchController.searchBar.text ?? ""
     }
 }
