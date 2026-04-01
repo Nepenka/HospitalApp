@@ -13,6 +13,8 @@ class VitalsViewModel {
     @Published var isValid: Bool = false
     @Published var meanArterialPressure: String = ""
     @Published var hypotensionStatus: String = ""
+    @Published var tachycardiaStatus: String = ""
+    @Published var dyspneaStatus: String = ""
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -39,10 +41,30 @@ class VitalsViewModel {
                 vitals.isHypotension ? "Да" : "Нет"
             }
             .assign(to: &$hypotensionStatus)
+        
+        $vitals
+            .map { vitals in
+                vitals.isTachycardia ? "Да" : "Нет"
+            }
+            .assign(to: &$tachycardiaStatus)
+        
+        $vitals
+            .map { vitals in
+                vitals.isDyspnea ? "Да" : "Нет"
+            }
+            .assign(to: &$dyspneaStatus)
     }
     
     func updateAge(_ age: Int?) {
-        vitals.age = age
+        vitals.ageYears = age
+    }
+    
+    func updateAgeMonths(_ value: Int?) {
+        vitals.ageMonths = value
+    }
+    
+    func updateBaselineSystolicBP(_ value: Int?) {
+        vitals.baselineSystolicBP = value
     }
     
     func updateSystolicBP(_ value: Int?) {

@@ -73,10 +73,9 @@ extension Symptom {
             Symptom(name: "Отек языка", system: .mucous, defaultSubgradeHint: .severe),
             
             // ЖКТ - Лёгкие
-            Symptom(name: "Дискомфорт кожи", system: .gastrointestinal, defaultSubgradeHint: .light),
             Symptom(name: "Тошнота", system: .gastrointestinal, defaultSubgradeHint: .light),
             Symptom(name: "Отхаркивание", system: .gastrointestinal, defaultSubgradeHint: .light),
-            Symptom(name: "Икота, выгибание спины", system: .gastrointestinal, defaultSubgradeHint: .light),
+            Symptom(name: "Младенцы - икота, выгибание спины, отхаркивание", system: .gastrointestinal, defaultSubgradeHint: .light),
             // ЖКТ - Умеренные
             Symptom(name: "Рвота", system: .gastrointestinal, defaultSubgradeHint: .moderate),
             Symptom(name: "Диарея", system: .gastrointestinal, defaultSubgradeHint: .moderate),
@@ -128,9 +127,10 @@ extension Symptom {
             
             // Респираторная - Лёгкие
             Symptom(name: "Чувство затруднения вдоха", system: .respiratory, defaultSubgradeHint: .light),
+            Symptom(name: "Чувство затруднения выдоха", system: .respiratory, defaultSubgradeHint: .light),
             Symptom(name: "Чувство стеснения в груди", system: .respiratory, defaultSubgradeHint: .light),
             Symptom(name: "Першение в горле или дискомфорт", system: .respiratory, defaultSubgradeHint: .light),
-            Symptom(name: "Дисфония, хриплый крик", system: .respiratory, defaultSubgradeHint: .light),
+            Symptom(name: "Дисфония", system: .respiratory, defaultSubgradeHint: .light),
             Symptom(name: "Лающий кашель", system: .respiratory, defaultSubgradeHint: .light),
             Symptom(name: "Одышка", system: .respiratory, defaultSubgradeHint: .light),
 
@@ -142,9 +142,9 @@ extension Symptom {
             Symptom(name: "Кряхтение/хрюканье", system: .respiratory, defaultSubgradeHint: .moderate),
             Symptom(name: "Работа вспомогательной мускулатуры", system: .respiratory, defaultSubgradeHint: .moderate),
             Symptom(name: "Раздувание крыльев носа", system: .respiratory, defaultSubgradeHint: .moderate),
-            Symptom(name: "Сатурация менее 92% при дыхании комнатным воздухом", system: .respiratory, defaultSubgradeHint: .moderate),
+            Symptom(name: "SaO2 < 92%", system: .respiratory, defaultSubgradeHint: .moderate),
             // Респираторная - Тяжёлые
-            Symptom(name: "ДН", system: .respiratory, defaultSubgradeHint: .severe),
+            Symptom(name: "ДН (дотация O2)", system: .respiratory, defaultSubgradeHint: .severe),
             
         ]
     }

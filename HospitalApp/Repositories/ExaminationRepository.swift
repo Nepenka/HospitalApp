@@ -26,6 +26,9 @@ class ExaminationRepository: ExaminationRepositoryProtocol {
         entity.id = examination.id
         entity.date = examination.date
         entity.severityGrade = Int16(examination.severityResult.severityGrade)
+        entity.patientId = examination.patient.id
+        entity.patientFullName = examination.patient.fullName
+        entity.diagnosis = examination.diagnosis
         
         if let sys = examination.vitals.systolicBP {
             entity.systolicBP = Int16(sys)

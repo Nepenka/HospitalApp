@@ -91,18 +91,23 @@ class SeverityEngine {
         
         // Применяем override от витальных данных
         if let vitals = vitals {
-            // Проверка гипотензии
-            if vitals.isHypotension {
-                subgrades[.cardiovascular] = .severe
-                explanationSteps.append("Гипотензия обнаружена → CV повышена до Т")
-            }
-            
-            // Проверка критического срАД (для взрослых, возраст > 10)
-            if let age = vitals.age, age > 10,
-               let map = vitals.meanArterialPressure,
-               map < config.meanArterialPressureCriticalThreshold {
-                subgrades[.cardiovascular] = .severe
-                explanationSteps.append("срАД < \(config.meanArterialPressureCriticalThreshold) мм рт.ст. → CV повышена до Т")
+            if let summary = vitals.vitalCriteriaSummary {
+                for impact in summary.impacts {
+                    let current = subgrades[impact.system] ?? .none
+                    if impact.subgrade.severityValue > current.severityValue {
+                        subgrades[impact.system] = impact.subgrade
+                        explanationSteps.append("\(impact.reason) → \(impact.system.displayName) повышена до \(impact.subgrade.shortName)")
+                    } else {
+                        explanationSteps.append("\(impact.reason) обнаружена, но \(impact.system.displayName) уже \(current.shortName)")
+                    }
+                }
+                
+                if let ageYears = vitals.ageYears,
+                   ageYears >= 18,
+                   let map = vitals.meanArterialPressure,
+                   map < config.meanArterialPressureCriticalThreshold {
+                    explanationSteps.append("срАД < \(config.meanArterialPressureCriticalThreshold) мм рт.ст. у взрослого")
+                }
             }
         }
         

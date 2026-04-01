@@ -139,7 +139,7 @@ class ExaminationCell: UITableViewCell {
             .map { "\($0.name) (\($0.effectiveSubgrade.shortName))" }
             .joined(separator: ", ")
         
-        titleLabel.text = "\(dateString) • Степень \(grade)"
-        detailLabel.text = "САД: \(systolic)\nСимптомы: \(symptomsText)"
+        titleLabel.text = "\(examination.patient.fullName) • \(dateString) • Степень \(grade)"
+        detailLabel.text = "Диагноз: \(examination.diagnosis)\nСАД: \(systolic)\nСимптомы: \(symptomsText)"
     }
 }

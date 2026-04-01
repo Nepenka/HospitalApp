@@ -62,9 +62,6 @@ class SymptomsViewController: UIViewController {
         view.backgroundColor = .systemBackground
         title = "Симптомы"
         
-        let historyItem = UIBarButtonItem(title: "История", style: .plain, target: self, action: #selector(historyButtonTapped))
-        navigationItem.rightBarButtonItem = historyItem
-        
         view.addSubview(tableView)
         view.addSubview(continueButton)
         view.addSubview(selectedCountLabel)
@@ -124,10 +121,6 @@ class SymptomsViewController: UIViewController {
             return
         }
         coordinator.showVitalsInput(selectedSymptoms: selectedSymptoms)
-    }
-    
-    @objc private func historyButtonTapped() {
-        coordinator.showExaminationHistory()
     }
     
     private func showAlert(message: String) {
@@ -365,7 +358,7 @@ private extension SymptomsViewController {
             return [
                 SymptomOption(title: "Без ПРД", subgrade: .light),
                 SymptomOption(title: "С ПРД", subgrade: .moderate),
-                SymptomOption(title: "С ДН, <немое легкое>", subgrade: .severe)
+                SymptomOption(title: #"немое легкое"#, subgrade: .severe)
             ]
         case "Стридор":
             return [

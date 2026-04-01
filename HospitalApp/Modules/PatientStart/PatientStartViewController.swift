@@ -1,0 +1,153 @@
+import UIKit
+import Combine
+
+class PatientStartViewController: UIViewController {
+    private let viewModel: PatientStartViewModel
+    private let coordinator: MainCoordinator
+    private var cancellables = Set<AnyCancellable>()
+    
+    private let contentView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .vertical
+        stackView.spacing = 16
+        stackView.layoutMargins = UIEdgeInsets(top: 24, left: 16, bottom: 24, right: 16)
+        stackView.isLayoutMarginsRelativeArrangement = true
+        return stackView
+    }()
+    
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "Данные пациента"
+        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.textColor = .label
+        return label
+    }()
+    
+    private let startButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("Начать осмотр", for: .normal)
+        button.backgroundColor = .systemBlue
+        button.setTitleColor(.white, for: .normal)
+        button.layer.cornerRadius = 12
+        button.titleLabel?.font = .systemFont(ofSize: 18, weight: .bold)
+        return button
+    }()
+    
+    private let historyButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("История осмотров", for: .normal)
+        button.backgroundColor = .white
+        button.setTitleColor(.systemBlue, for: .normal)
+        button.layer.cornerRadius = 12
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.systemBlue.cgColor
+        button.titleLabel?.font = .systemFont(ofSize: 18, weight: .bold)
+        return button
+    }()
+    
+    private let fullNameField = UITextField()
+    private let preliminaryDiagnosisField = UITextField()
+    
+    init(viewModel: PatientStartViewModel, coordinator: MainCoordinator) {
+        self.viewModel = viewModel
+        self.coordinator = coordinator
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        setupBindings()
+    }
+    
+    private func setupUI() {
+        overrideUserInterfaceStyle = .light
+        view.backgroundColor = .systemBackground
+        
+        
+        view.addSubview(contentView)
+        
+        contentView.addArrangedSubview(titleLabel)
+        contentView.addArrangedSubview(configureField(fullNameField, placeholder: "ФИО пациента"))
+        contentView.addArrangedSubview(configureField(preliminaryDiagnosisField, placeholder: "Предварительный диагноз"))
+        preliminaryDiagnosisField.autocapitalizationType = .sentences
+        contentView.addArrangedSubview(startButton)
+        contentView.addArrangedSubview(historyButton)
+        
+        startButton.addTarget(self, action: #selector(startTapped), for: .touchUpInside)
+        historyButton.addTarget(self, action: #selector(historyTapped), for: .touchUpInside)
+        
+        NSLayoutConstraint.activate([
+            contentView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            startButton.heightAnchor.constraint(equalToConstant: 50),
+            historyButton.heightAnchor.constraint(equalToConstant: 50),
+            contentView.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
+        ])
+    }
+    
+    private func setupBindings() {
+        fullNameField.addTarget(self, action: #selector(textFieldChanged(_:)), for: .editingChanged)
+        preliminaryDiagnosisField.addTarget(self, action: #selector(textFieldChanged(_:)), for: .editingChanged)
+        
+        viewModel.$isValid
+            .sink { [weak self] isValid in
+                self?.startButton.isEnabled = isValid
+                self?.startButton.alpha = isValid ? 1.0 : 0.5
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func configureField(_ field: UITextField, placeholder: String) -> UIView {
+        field.borderStyle = .none
+        field.placeholder = placeholder
+        field.autocapitalizationType = .words
+        field.font = .systemFont(ofSize: 17, weight: .regular)
+        field.backgroundColor = .secondarySystemBackground
+        field.layer.cornerRadius = 16
+        field.layer.masksToBounds = true
+        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
+        field.leftViewMode = .always
+        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
+        field.rightViewMode = .always
+        field.translatesAutoresizingMaskIntoConstraints = false
+        field.heightAnchor.constraint(equalToConstant: 56).isActive = true
+        
+        return field
+    }
+    
+    @objc private func textFieldChanged(_ sender: UITextField) {
+        if sender === fullNameField {
+            viewModel.fullName = sender.text ?? ""
+        } else if sender === preliminaryDiagnosisField {
+            viewModel.preliminaryDiagnosis = sender.text ?? ""
+        }
+    }
+    
+    @objc private func startTapped() {
+        guard let patient = viewModel.createAndSavePatient() else {
+            showAlert("Заполните ФИО пациента и предварительный диагноз")
+            return
+        }
+        coordinator.showSymptoms(for: patient)
+    }
+    
+    @objc private func historyTapped() {
+        coordinator.showExaminationHistory()
+    }
+    
+    private func showAlert(_ message: String) {
+        let alert = UIAlertController(title: "Внимание", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+}

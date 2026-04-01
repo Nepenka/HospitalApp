@@ -52,6 +52,15 @@ class ResultViewController: UIViewController {
         return button
     }()
     
+    private let diagnosisField: UITextField = {
+        let field = UITextField()
+        field.translatesAutoresizingMaskIntoConstraints = false
+        field.borderStyle = .roundedRect
+        field.placeholder = "Диагноз"
+        field.autocapitalizationType = .sentences
+        return field
+    }()
+    
     private let newExaminationButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -91,6 +100,7 @@ class ResultViewController: UIViewController {
         view.addSubview(newExaminationButton)
         
         contentView.addArrangedSubview(severityCard)
+        contentView.addArrangedSubview(diagnosisField)
         
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
         newExaminationButton.addTarget(self, action: #selector(newExaminationTapped), for: .touchUpInside)
@@ -103,6 +113,7 @@ class ResultViewController: UIViewController {
             contentView.widthAnchor.constraint(equalTo: view.widthAnchor),
             
             severityCard.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
+            diagnosisField.heightAnchor.constraint(equalToConstant: 44),
             
             saveButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             saveButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -214,6 +225,13 @@ class ResultViewController: UIViewController {
     }
     
     @objc private func saveTapped() {
+        viewModel.diagnosis = diagnosisField.text ?? ""
+        let cleanDiagnosis = viewModel.diagnosis.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanDiagnosis.isEmpty else {
+            showAlert(message: "Укажите диагноз перед сохранением", completion: nil)
+            return
+        }
+        
         viewModel.saveExamination()
         showAlert(message: "Осмотр сохранен", completion: {
             self.coordinator.showExaminationHistory()

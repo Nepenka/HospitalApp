@@ -9,15 +9,23 @@ import UIKit
 
 class MainCoordinator: Coordinator {
     var navigationController: UINavigationController
+    private var currentPatient: Patient?
     
     init(navigationController: UINavigationController) {
         self.navigationController = navigationController
     }
     
     func start() {
+        let viewModel = PatientStartViewModel()
+        let viewController = PatientStartViewController(viewModel: viewModel, coordinator: self)
+        navigationController.pushViewController(viewController, animated: false)
+    }
+    
+    func showSymptoms(for patient: Patient) {
+        currentPatient = patient
         let viewModel = SymptomsViewModel()
         let viewController = SymptomsViewController(viewModel: viewModel, coordinator: self)
-        navigationController.pushViewController(viewController, animated: false)
+        navigationController.pushViewController(viewController, animated: true)
     }
     
     func showVitalsInput(selectedSymptoms: [Symptom]) {
@@ -31,16 +39,15 @@ class MainCoordinator: Coordinator {
     }
     
     func showResult(selectedSymptoms: [Symptom], vitals: Vitals) {
+        guard let patient = currentPatient else { return }
         let viewModel = ResultViewModel()
-        viewModel.calculateSeverity(selectedSymptoms: selectedSymptoms, vitals: vitals)
+        viewModel.calculateSeverity(selectedSymptoms: selectedSymptoms, vitals: vitals, patient: patient)
         let viewController = ResultViewController(viewModel: viewModel, coordinator: self)
         navigationController.pushViewController(viewController, animated: true)
     }
     
     func startNewExamination() {
-        if let rootVC = navigationController.viewControllers.first as? SymptomsViewController {
-            rootVC.reset()
-        }
+        currentPatient = nil
         navigationController.popToRootViewController(animated: true)
     }
     

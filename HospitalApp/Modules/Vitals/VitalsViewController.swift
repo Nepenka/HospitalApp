@@ -33,7 +33,7 @@ class VitalsViewController: UIViewController {
     private let continueButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle("Рассчитать степень тяжести", for: .normal)
+        button.setTitle("Дальше", for: .normal)
         button.backgroundColor = .systemBlue
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 12
@@ -74,7 +74,9 @@ class VitalsViewController: UIViewController {
         
         // Создаем поля ввода
         let fields: [(title: String, key: String, placeholder: String)] = [
-            ("Возраст (лет)", "age", "Сколько лет: "),
+            ("Возраст (лет)", "ageYears", "Сколько лет: "),
+            ("Возраст (месяцев, если <1 года)", "ageMonths", "0...11"),
+            ("Исходное систолическое АД (для взрослых, опц.)", "baselineSystolicBP", "Исходное САД"),
             ("Систолическое АД (мм рт.ст.)", "systolicBP", "Систолическое АД (мм рт.ст.): "),
             ("Диастолическое АД (мм рт.ст.)", "diastolicBP", "Диастолическое АД (мм рт.ст.): "),
             ("SpO2 (%)", "spO2", "SpO2 (%): "),
@@ -97,6 +99,14 @@ class VitalsViewController: UIViewController {
         let hypotensionLabel = createInfoLabel(text: "Гипотензия: —")
         hypotensionLabel.tag = 101
         contentView.addArrangedSubview(hypotensionLabel)
+        
+        let tachycardiaLabel = createInfoLabel(text: "Тахикардия: —")
+        tachycardiaLabel.tag = 102
+        contentView.addArrangedSubview(tachycardiaLabel)
+        
+        let dyspneaLabel = createInfoLabel(text: "Одышка: —")
+        dyspneaLabel.tag = 103
+        contentView.addArrangedSubview(dyspneaLabel)
         
         continueButton.addTarget(self, action: #selector(calculateTapped), for: .touchUpInside)
         
@@ -183,6 +193,24 @@ class VitalsViewController: UIViewController {
             }
             .store(in: &cancellables)
         
+        viewModel.$tachycardiaStatus
+            .sink { [weak self] value in
+                if let label = self?.view.viewWithTag(102) as? UILabel {
+                    label.text = "Тахикардия: \(value)"
+                    label.textColor = value == "Да" ? .systemRed : .systemBlue
+                }
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$dyspneaStatus
+            .sink { [weak self] value in
+                if let label = self?.view.viewWithTag(103) as? UILabel {
+                    label.text = "Одышка: \(value)"
+                    label.textColor = value == "Да" ? .systemRed : .systemBlue
+                }
+            }
+            .store(in: &cancellables)
+        
         viewModel.$isValid
             .sink { [weak self] isValid in
                 self?.continueButton.isEnabled = isValid
@@ -196,8 +224,12 @@ class VitalsViewController: UIViewController {
         let value = Int(textField.text ?? "")
         
         switch key {
-        case "age":
+        case "ageYears":
             viewModel.updateAge(value)
+        case "ageMonths":
+            viewModel.updateAgeMonths(value)
+        case "baselineSystolicBP":
+            viewModel.updateBaselineSystolicBP(value)
         case "systolicBP":
             viewModel.updateSystolicBP(value)
         case "diastolicBP":
