@@ -67,11 +67,10 @@ class PatientStartViewController: UIViewController {
         navigationItem.title = "Данные пациента"
         navigationController?.navigationBar.prefersLargeTitles = true
         
-        
         view.addSubview(contentView)
         
-        contentView.addArrangedSubview(configureField(fullNameField, placeholder: "ФИО пациента"))
-        contentView.addArrangedSubview(configureField(preliminaryDiagnosisField, placeholder: "Предварительный диагноз"))
+        contentView.addArrangedSubview(UITextField.configureField(fullNameField, placeholder: "ФИО пациента"))
+        contentView.addArrangedSubview(UITextField.configureField(preliminaryDiagnosisField, placeholder: "Предварительный диагноз"))
         preliminaryDiagnosisField.autocapitalizationType = .sentences
         contentView.addArrangedSubview(startButton)
         contentView.addArrangedSubview(historyButton)
@@ -101,23 +100,23 @@ class PatientStartViewController: UIViewController {
             .store(in: &cancellables)
     }
     
-    private func configureField(_ field: UITextField, placeholder: String) -> UIView {
-        field.borderStyle = .none
-        field.placeholder = placeholder
-        field.autocapitalizationType = .words
-        field.font = .systemFont(ofSize: 17, weight: .regular)
-        field.backgroundColor = .secondarySystemBackground
-        field.layer.cornerRadius = 16
-        field.layer.masksToBounds = true
-        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
-        field.leftViewMode = .always
-        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
-        field.rightViewMode = .always
-        field.translatesAutoresizingMaskIntoConstraints = false
-        field.heightAnchor.constraint(equalToConstant: 56).isActive = true
-        
-        return field
-    }
+//    private func configureField(_ field: UITextField, placeholder: String) -> UIView {
+//        field.borderStyle = .none
+//        field.placeholder = placeholder
+//        field.autocapitalizationType = .words
+//        field.font = .systemFont(ofSize: 17, weight: .regular)
+//        field.backgroundColor = .secondarySystemBackground
+//        field.layer.cornerRadius = 16
+//        field.layer.masksToBounds = true
+//        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
+//        field.leftViewMode = .always
+//        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
+//        field.rightViewMode = .always
+//        field.translatesAutoresizingMaskIntoConstraints = false
+//        field.heightAnchor.constraint(equalToConstant: 56).isActive = true
+//        
+//        return field
+//    }
     
     @objc private func textFieldChanged(_ sender: UITextField) {
         if sender === fullNameField {

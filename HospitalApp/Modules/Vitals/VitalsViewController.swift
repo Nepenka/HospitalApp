@@ -47,6 +47,7 @@ class VitalsViewController: UIViewController {
     private var inputFields: [UITextField] = []
     private var fieldKeyMap: [UITextField: String] = [:]
     private var ageMonthsRow: UIView?
+    private var ageYearsRow: UIView?
     private var ageYearsTextField: UITextField?
     private var ageMonthsTextField: UITextField?
     
@@ -107,6 +108,7 @@ class VitalsViewController: UIViewController {
             applyInitialValue(for: textField, key: fieldInfo.key)
             
             if fieldInfo.key == "ageYears" {
+                ageYearsRow = container
                 ageYearsTextField = textField
             }
             if fieldInfo.key == "ageMonths" {
@@ -116,6 +118,7 @@ class VitalsViewController: UIViewController {
         }
         
         updateMonthsRowVisibility(animated: false)
+        updateYearRowVisibility(animated: false)
         
         // Добавляем информационные метки
         let mapLabel = createInfoLabel(text: "срАД: —")
@@ -218,6 +221,32 @@ class VitalsViewController: UIViewController {
         }
     }
     
+    private func updateYearRowVisibility(animated: Bool) {
+        guard let ageRow = ageYearsRow else {return}
+        
+        let months = viewModel.vitals.ageMonths
+        let hideYears = months.map{$0 >= 1} ?? false
+        
+        if hideYears {
+            viewModel.updateAge(nil)
+            ageYearsTextField?.text = ""
+            ageYearsTextField?.isEnabled = false
+        }else{
+            ageYearsTextField?.isEnabled = true
+        }
+        
+        let updatesYear = {
+            ageRow.alpha = hideYears ? 0 : 1
+            ageRow.isHidden = hideYears
+        }
+        
+        if animated {
+            UIView.animate(withDuration: 0.25, animations: updatesYear)
+        } else {
+            updatesYear()
+        }
+    }
+    
     private func createInfoLabel(text: String) -> UILabel {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -282,6 +311,7 @@ class VitalsViewController: UIViewController {
             updateMonthsRowVisibility(animated: true)
         case "ageMonths":
             viewModel.updateAgeMonths(value)
+            updateYearRowVisibility(animated: true)
         case "baselineSystolicBP":
             viewModel.updateBaselineSystolicBP(value)
         case "systolicBP":

@@ -99,7 +99,6 @@ class ResultViewController: UIViewController {
     }
     
     private func setupUI() {
-        // Принудительно устанавливаем светлую тему
         overrideUserInterfaceStyle = .light
         view.backgroundColor = .systemGroupedBackground
         navigationItem.largeTitleDisplayMode = .never
