@@ -41,8 +41,8 @@ class PatientStartViewController: UIViewController {
         return button
     }()
     
-    private let fullNameField = UITextField()
-    private let preliminaryDiagnosisField = UITextField()
+    private let fullNameField = UITextField.configureField(placeholder: "ФИО пациента")
+    private let preliminaryDiagnosisField = UITextField.configureField(placeholder: "Предварительный диагноз")
     
     init(viewModel: PatientStartViewModel, coordinator: MainCoordinator) {
         self.viewModel = viewModel
@@ -69,8 +69,8 @@ class PatientStartViewController: UIViewController {
         
         view.addSubview(contentView)
         
-        contentView.addArrangedSubview(UITextField.configureField(fullNameField, placeholder: "ФИО пациента"))
-        contentView.addArrangedSubview(UITextField.configureField(preliminaryDiagnosisField, placeholder: "Предварительный диагноз"))
+        contentView.addArrangedSubview(fullNameField)
+        contentView.addArrangedSubview(preliminaryDiagnosisField)
         preliminaryDiagnosisField.autocapitalizationType = .sentences
         contentView.addArrangedSubview(startButton)
         contentView.addArrangedSubview(historyButton)
@@ -100,23 +100,6 @@ class PatientStartViewController: UIViewController {
             .store(in: &cancellables)
     }
     
-//    private func configureField(_ field: UITextField, placeholder: String) -> UIView {
-//        field.borderStyle = .none
-//        field.placeholder = placeholder
-//        field.autocapitalizationType = .words
-//        field.font = .systemFont(ofSize: 17, weight: .regular)
-//        field.backgroundColor = .secondarySystemBackground
-//        field.layer.cornerRadius = 16
-//        field.layer.masksToBounds = true
-//        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
-//        field.leftViewMode = .always
-//        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
-//        field.rightViewMode = .always
-//        field.translatesAutoresizingMaskIntoConstraints = false
-//        field.heightAnchor.constraint(equalToConstant: 56).isActive = true
-//        
-//        return field
-//    }
     
     @objc private func textFieldChanged(_ sender: UITextField) {
         if sender === fullNameField {

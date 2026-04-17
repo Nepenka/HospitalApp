@@ -9,7 +9,8 @@ import UIKit
 
 extension UITextField {
     
-     static func configureField(_ field: UITextField, placeholder: String) -> UITextField {
+     static func configureField(placeholder: String) -> UITextField {
+         let field = UITextField()
         field.borderStyle = .none
         field.placeholder = placeholder
         field.autocapitalizationType = .words

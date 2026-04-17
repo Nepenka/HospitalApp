@@ -50,11 +50,11 @@ final class ExaminationCell: UITableViewCell {
     
     func configure(with examination: Examination) {
         let formatter = DateFormatter()
-        formatter.dateFormat = "dd.MM.yyyy HH:mm"
+        formatter.dateFormat = "dd.MM.yy HH:mm"
         let dateString = formatter.string(from: examination.date)
         
         let grade = examination.severityResult.severityGrade
-        let systolic = examination.vitals.systolicBP != nil ? "\(examination.vitals.systolicBP!) мм рт.ст." : "хуй"
+        let systolic = examination.vitals.systolicBP != nil ? "\(examination.vitals.systolicBP!) мм рт.ст." : "нет"
         
         // Симптомы + субградации
         let symptomsText = examination.selectedSymptoms

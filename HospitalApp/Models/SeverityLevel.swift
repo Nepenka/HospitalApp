@@ -35,12 +35,12 @@ enum SeverityLevel: Int, Codable {
 }
 
 struct SeverityResult: Codable {
-    let severityGrade: Int // 0-5
+    let severityGrade: Int 
     let perSystemSubgrades: [SystemType: Subgrade]
     let explanation: String
     
     var level: SeverityLevel? {
-        guard severityGrade >= 1 && severityGrade <= 5 else { return nil }
+        guard  severityGrade >= 1 && severityGrade <= 5 else { return nil }
         return SeverityLevel(rawValue: severityGrade)
     }
     

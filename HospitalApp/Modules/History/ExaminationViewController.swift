@@ -123,15 +123,6 @@ extension ExaminationsHistoryViewController: UITableViewDataSource, UITableViewD
             return UIMenu(title: "", children: [shareAction, editAction, deleteAction])
         }
     }
-    
-    // при желании можно добавить свайп на удаление:
-//    func tableView(_ tableView: UITableView,
-//                   commit editingStyle: UITableViewCell.EditingStyle,
-//                   forRowAt indexPath: IndexPath) {
-//        if editingStyle == .delete {
-//            viewModel.deleteExamination(at: indexPath.row)
-//        }
-//    }
 }
 
 extension ExaminationsHistoryViewController: UISearchResultsUpdating {
@@ -139,3 +130,4 @@ extension ExaminationsHistoryViewController: UISearchResultsUpdating {
         viewModel.searchText = searchController.searchBar.text ?? ""
     }
 }
+

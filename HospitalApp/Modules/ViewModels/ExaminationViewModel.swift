@@ -18,14 +18,14 @@ class ExaminationViewModel {
     
     private let dateTimeFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "dd.MM.yyyy HH:mm"
+        f.dateFormat = "dd.MM.yy HH:mm"
         f.locale = Locale(identifier: "ru_RU")
         return f
     }()
     
     private let dateOnlyFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "dd.MM.yyyy"
+        f.dateFormat = "dd.MM.yy"
         f.locale = Locale(identifier: "ru_RU")
         return f
     }()
