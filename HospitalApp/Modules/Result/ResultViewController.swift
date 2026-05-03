@@ -67,6 +67,21 @@ class ResultViewController: UIViewController {
         field.leftViewMode = .always
         return field
     }()
+
+    private let allergenContactLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "Контакт с вероятным аллергеном:"
+        label.font = .systemFont(ofSize: 15, weight: .semibold)
+        return label
+    }()
+
+    private let allergenContactControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["Неизвестно", "Нет", "Да"])
+        control.translatesAutoresizingMaskIntoConstraints = false
+        control.selectedSegmentIndex = 0
+        return control
+    }()
     
     private let newExaminationButton: UIButton = {
         let button = UIButton(type: .system)
@@ -113,6 +128,7 @@ class ResultViewController: UIViewController {
         
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
         newExaminationButton.addTarget(self, action: #selector(newExaminationTapped), for: .touchUpInside)
+        allergenContactControl.addTarget(self, action: #selector(allergenContactChanged(_:)), for: .valueChanged)
         
         NSLayoutConstraint.activate([
             contentView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -121,7 +137,7 @@ class ResultViewController: UIViewController {
             contentView.bottomAnchor.constraint(equalTo: saveButton.bottomAnchor, constant: -50),
             contentView.widthAnchor.constraint(equalTo: view.widthAnchor),
             
-            severityCard.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
+            severityCard.heightAnchor.constraint(greaterThanOrEqualToConstant: 280),
             diagnosisField.heightAnchor.constraint(equalToConstant: 44),
             
             saveButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
@@ -143,6 +159,14 @@ class ResultViewController: UIViewController {
                 self?.updateUI(with: result)
             }
             .store(in: &cancellables)
+
+        viewModel.$clinicalConclusion
+            .sink { [weak self] _ in
+                guard let self = self, let result = self.viewModel.severityResult else { return }
+                self.updateUI(with: result)
+            }
+            .store(in: &cancellables)
+
     }
     
     private func updateUI(with result: SeverityResult) {
@@ -197,6 +221,70 @@ class ResultViewController: UIViewController {
         stackView.addArrangedSubview(systemsLabel)
         stackView.addArrangedSubview(explanationLabel)
         
+        // Блок клинического заключения в читаемом формате для врача
+        if let conclusion = viewModel.clinicalConclusion {
+            let conclusionTitle = UILabel()
+            conclusionTitle.text = "Клиническое заключение"
+            conclusionTitle.font = .systemFont(ofSize: 20, weight: .bold)
+            
+            let summaryCard = makeCardView()
+            let summaryLabel = UILabel()
+            summaryLabel.numberOfLines = 0
+            summaryLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+            summaryLabel.text = conclusion.conclusionText
+            summaryCard.addSubview(summaryLabel)
+            summaryLabel.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                summaryLabel.topAnchor.constraint(equalTo: summaryCard.topAnchor, constant: 12),
+                summaryLabel.leadingAnchor.constraint(equalTo: summaryCard.leadingAnchor, constant: 12),
+                summaryLabel.trailingAnchor.constraint(equalTo: summaryCard.trailingAnchor, constant: -12),
+                summaryLabel.bottomAnchor.constraint(equalTo: summaryCard.bottomAnchor, constant: -12)
+            ])
+            
+            let checksTitle = UILabel()
+            checksTitle.text = "Диагностические критерии"
+            checksTitle.font = .systemFont(ofSize: 17, weight: .semibold)
+            
+            stackView.addArrangedSubview(conclusionTitle)
+            stackView.addArrangedSubview(summaryCard)
+            stackView.addArrangedSubview(checksTitle)
+            stackView.addArrangedSubview(makeDiagnosisCheckCard(conclusion.primaryAnaphylaxis))
+            stackView.addArrangedSubview(makeDiagnosisCheckCard(conclusion.niaidAnaphylaxis))
+            stackView.addArrangedSubview(makeDiagnosisCheckCard(conclusion.waoAnaphylaxis))
+            
+            if let urticaria = conclusion.urticariaAngioedemaText {
+                let urticariaCard = makeCardView()
+                let urticariaLabel = UILabel()
+                urticariaLabel.numberOfLines = 0
+                urticariaLabel.font = .systemFont(ofSize: 14)
+                urticariaLabel.text = "Крапивница / ангиоотёк: \(urticaria)"
+                urticariaCard.addSubview(urticariaLabel)
+                urticariaLabel.translatesAutoresizingMaskIntoConstraints = false
+                NSLayoutConstraint.activate([
+                    urticariaLabel.topAnchor.constraint(equalTo: urticariaCard.topAnchor, constant: 10),
+                    urticariaLabel.leadingAnchor.constraint(equalTo: urticariaCard.leadingAnchor, constant: 12),
+                    urticariaLabel.trailingAnchor.constraint(equalTo: urticariaCard.trailingAnchor, constant: -12),
+                    urticariaLabel.bottomAnchor.constraint(equalTo: urticariaCard.bottomAnchor, constant: -10)
+                ])
+                stackView.addArrangedSubview(urticariaCard)
+            }
+        }
+        
+        // Переключатель контакта с аллергеном — внизу результата
+        let contactCard = makeCardView()
+        let contactStack = UIStackView(arrangedSubviews: [allergenContactLabel, allergenContactControl])
+        contactStack.axis = .vertical
+        contactStack.spacing = 8
+        contactStack.translatesAutoresizingMaskIntoConstraints = false
+        contactCard.addSubview(contactStack)
+        NSLayoutConstraint.activate([
+            contactStack.topAnchor.constraint(equalTo: contactCard.topAnchor, constant: 10),
+            contactStack.leadingAnchor.constraint(equalTo: contactCard.leadingAnchor, constant: 12),
+            contactStack.trailingAnchor.constraint(equalTo: contactCard.trailingAnchor, constant: -12),
+            contactStack.bottomAnchor.constraint(equalTo: contactCard.bottomAnchor, constant: -10)
+        ])
+        stackView.addArrangedSubview(contactCard)
+        
         scrollView.addSubview(stackView)
         severityCard.addSubview(scrollView)
         
@@ -232,6 +320,66 @@ class ResultViewController: UIViewController {
             return .systemGray
         }
     }
+
+    private func makeCardView() -> UIView {
+        let view = UIView()
+        view.backgroundColor = .secondarySystemBackground
+        view.layer.cornerRadius = 12
+        return view
+    }
+    
+    private func makeDiagnosisCheckCard(_ item: DiagnosisCheckResult) -> UIView {
+        let card = makeCardView()
+        
+        let titleLabel = UILabel()
+        titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        titleLabel.numberOfLines = 0
+        titleLabel.text = item.title
+        
+        let statusLabel = UILabel()
+        statusLabel.font = .systemFont(ofSize: 12, weight: .bold)
+        statusLabel.textAlignment = .center
+        statusLabel.textColor = .white
+        statusLabel.layer.cornerRadius = 10
+        statusLabel.clipsToBounds = true
+        statusLabel.text = "  \(item.status.rawValue)  "
+        statusLabel.backgroundColor = statusColor(item.status)
+        
+        let reasonLabel = UILabel()
+        reasonLabel.font = .systemFont(ofSize: 13)
+        reasonLabel.textColor = .secondaryLabel
+        reasonLabel.numberOfLines = 0
+        reasonLabel.text = item.reason
+        
+        let topRow = UIStackView(arrangedSubviews: [titleLabel, statusLabel])
+        topRow.axis = .horizontal
+        topRow.alignment = .top
+        topRow.spacing = 8
+        
+        let root = UIStackView(arrangedSubviews: [topRow, reasonLabel])
+        root.axis = .vertical
+        root.spacing = 8
+        root.translatesAutoresizingMaskIntoConstraints = false
+        
+        card.addSubview(root)
+        NSLayoutConstraint.activate([
+            root.topAnchor.constraint(equalTo: card.topAnchor, constant: 10),
+            root.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
+            root.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
+            root.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -10),
+            statusLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 100)
+        ])
+        
+        return card
+    }
+    
+    private func statusColor(_ status: DiagnosisStatus) -> UIColor {
+        switch status {
+        case .confirmed: return .systemRed
+        case .notConfirmed: return .systemGreen
+        case .notEnoughData: return .systemOrange
+        }
+    }
     
     @objc private func saveTapped() {
         viewModel.diagnosis = diagnosisField.text ?? ""
@@ -245,6 +393,17 @@ class ResultViewController: UIViewController {
         showAlert(message: "Осмотр сохранен", completion: {
             self.coordinator.startNewExamination()
         })
+    }
+
+    @objc private func allergenContactChanged(_ sender: UISegmentedControl) {
+        switch sender.selectedSegmentIndex {
+        case 1:
+            viewModel.updateKnownAllergenContact(false)
+        case 2:
+            viewModel.updateKnownAllergenContact(true)
+        default:
+            viewModel.updateKnownAllergenContact(nil)
+        }
     }
     
     @objc private func newExaminationTapped() {

@@ -10,20 +10,25 @@ import Combine
 
 class ResultViewModel {
     @Published var severityResult: SeverityResult?
+    @Published var clinicalConclusion: ClinicalConclusionResult?
     @Published var selectedSymptoms: [Symptom] = []
     @Published var vitals: Vitals = Vitals()
     @Published var patient: Patient?
     @Published var diagnosis: String = ""
     @Published var perSystemSubgrades: [SystemType: Subgrade] = [:]
     @Published var editingExaminationId: UUID?
+    @Published var hadKnownAllergenContact: Bool?
     
     private let repository: ExaminationRepositoryProtocol
     private let severityEngine: SeverityEngine
+    private let clinicalConclusionEngine: ClinicalConclusionEngine
     
     init(repository: ExaminationRepositoryProtocol = ExaminationRepository(),
-         severityEngine: SeverityEngine = SeverityEngine()) {
+         severityEngine: SeverityEngine = SeverityEngine(),
+         clinicalConclusionEngine: ClinicalConclusionEngine = ClinicalConclusionEngine()) {
         self.repository = repository
         self.severityEngine = severityEngine
+        self.clinicalConclusionEngine = clinicalConclusionEngine
     }
     
     func calculateSeverity(
@@ -49,6 +54,29 @@ class ResultViewModel {
             perSystem: perSystemSubgrades,
             vitals: vitals
         )
+
+        if severityResult != nil {
+            recalculateClinicalConclusion()
+        }
+    }
+
+    func updateKnownAllergenContact(_ value: Bool?) {
+        hadKnownAllergenContact = value
+        recalculateClinicalConclusion()
+    }
+
+    private func recalculateClinicalConclusion() {
+        guard let severityResult else { return }
+        let conclusion = clinicalConclusionEngine.buildConclusion(
+            severityResult: severityResult,
+            selectedSymptoms: selectedSymptoms,
+            vitals: vitals,
+            hadKnownAllergenContact: hadKnownAllergenContact
+        )
+        clinicalConclusion = conclusion
+        if diagnosis.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            diagnosis = conclusion.conclusionText
+        }
     }
     
     func saveExamination() {

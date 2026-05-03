@@ -221,29 +221,30 @@ class VitalsViewController: UIViewController {
         }
     }
     
+    /// При вводе месяцев (для детей <1 года) скрываем поле "Возраст (лет)"
     private func updateYearRowVisibility(animated: Bool) {
-        guard let ageRow = ageYearsRow else {return}
+        guard let ageRow = ageYearsRow else { return }
         
         let months = viewModel.vitals.ageMonths
-        let hideYears = months.map{$0 >= 1} ?? false
+        let hideYears = months.map { $0 >= 1 } ?? false
         
         if hideYears {
             viewModel.updateAge(nil)
             ageYearsTextField?.text = ""
             ageYearsTextField?.isEnabled = false
-        }else{
+        } else {
             ageYearsTextField?.isEnabled = true
         }
         
-        let updatesYear = {
+        let updates = {
             ageRow.alpha = hideYears ? 0 : 1
             ageRow.isHidden = hideYears
         }
         
         if animated {
-            UIView.animate(withDuration: 0.25, animations: updatesYear)
+            UIView.animate(withDuration: 0.25, animations: updates)
         } else {
-            updatesYear()
+            updates()
         }
     }
     

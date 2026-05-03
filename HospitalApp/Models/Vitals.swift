@@ -24,10 +24,21 @@ struct PatientAge: Equatable {
     let months: Int
     
     init?(years: Int?, months: Int?) {
-        guard let years = years, years >= 0 else { return nil }
-        let normalizedMonths = max(0, min(months ?? 0, 11))
-        self.years = years
-        self.months = normalizedMonths
+        if let years, years >= 0 {
+            let normalizedMonths = max(0, min(months ?? 0, 11))
+            self.years = years
+            self.months = normalizedMonths
+            return
+        }
+        
+        // Разрешаем сценарий "только месяцы" для детей < 1 года.
+        if let months, (0...11).contains(months) {
+            self.years = 0
+            self.months = months
+            return
+        }
+        
+        return nil
     }
     
     var ageInMonths: Int {
@@ -243,8 +254,12 @@ struct Vitals: Codable {
     }
     
     var isValid: Bool {
-        guard let ageYears, ageYears >= 0 else { return false }
-        if ageYears == 0 && ageMonths == nil {
+        // Валидно, если указан либо возраст в годах, либо возраст в месяцах (для <1 года)
+        let hasValidYears = (ageYears ?? -1) >= 0
+        let hasValidMonths = (ageMonths ?? -1) >= 0
+        guard hasValidYears || hasValidMonths else { return false }
+        
+        if (ageYears == 0 || ageYears == nil) && ageMonths == nil {
             return false
         }
         return systolicBP != nil && diastolicBP != nil &&

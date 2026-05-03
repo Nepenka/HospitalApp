@@ -114,10 +114,12 @@ class PatientStartViewController: UIViewController {
             showAlert("Заполните ФИО пациента и предварительный диагноз")
             return
         }
+        startButton.getTapButton()
         coordinator.showSymptoms(for: patient, initialDiagnosis: viewModel.cleanPreliminaryDiagnosis)
     }
     
     @objc private func historyTapped() {
+        historyButton.getTapButton()
         coordinator.showExaminationHistory()
     }
     
