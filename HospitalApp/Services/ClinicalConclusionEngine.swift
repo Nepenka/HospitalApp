@@ -29,7 +29,8 @@ final class ClinicalConclusionEngine {
 
         let wao = evaluateWAOVariant(
             selectedSymptoms: selectedSymptoms,
-            vitals: vitals
+            vitals: vitals,
+            hadKnownAllergenContact: allergenContact
         )
 
         let urticariaAngioedema = buildUrticariaAngioedemaText(
@@ -37,10 +38,12 @@ final class ClinicalConclusionEngine {
             selectedSymptoms: selectedSymptoms
         )
 
+        let anaphylaxisConfirmed = [primary, niaid, wao].contains { $0.status == .confirmed }
+
         let conclusionText = buildConclusionText(
             severityGrade: grade,
             activeSystems: activeSystems,
-            primary: primary,
+            anaphylaxisConfirmed: anaphylaxisConfirmed,
             urticariaAngioedemaText: urticariaAngioedema
         )
 
@@ -81,7 +84,10 @@ final class ClinicalConclusionEngine {
         // В приложении субградации Л/У/Т: для «>= умеренной» используем У или Т.
         let respiratorySignificant = respiratorySubgrade == .moderate || respiratorySubgrade == .severe
         let hasRespiratorySymptoms = activeSystems.contains(.respiratory)
-            || AnaphylaxisSymptomCatalog.matchesAny(selectedSymptoms, keywords: AnaphylaxisSymptomCatalog.respiratoryKeywords)
+            || AnaphylaxisSymptomCatalog.matchesAny(
+                selectedSymptoms,
+                keywords: AnaphylaxisSymptomCatalog.niaidRespiratoryKeywords
+            )
 
         let confirmed = severityGrade >= 4
             || (severityGrade == 3 && involvedCount >= 2)
@@ -116,15 +122,22 @@ final class ClinicalConclusionEngine {
         vitals: Vitals,
         hadKnownAllergenContact: Bool?
     ) -> DiagnosisCheckResult {
-        let hasSkin = AnaphylaxisSymptomCatalog.matchesAny(selectedSymptoms, keywords: AnaphylaxisSymptomCatalog.skinMucousKeywords)
-        let hasResp = AnaphylaxisSymptomCatalog.matchesAny(selectedSymptoms, keywords: AnaphylaxisSymptomCatalog.respiratoryKeywords)
-        let hasCV = AnaphylaxisSymptomCatalog.matchesAny(selectedSymptoms, keywords: AnaphylaxisSymptomCatalog.cardiovascularKeywords)
-            || vitals.isHypotension
-        let hasGI = AnaphylaxisSymptomCatalog.matchesAny(selectedSymptoms, keywords: AnaphylaxisSymptomCatalog.gastrointestinalKeywords)
+        let hasSkin = AnaphylaxisSymptomCatalog.matchesAny(
+            selectedSymptoms,
+            keywords: AnaphylaxisSymptomCatalog.niaidSkinMucousKeywords
+        )
+        let hasResp = AnaphylaxisSymptomCatalog.matchesAny(
+            selectedSymptoms,
+            keywords: AnaphylaxisSymptomCatalog.niaidRespiratoryKeywords
+        )
+        let hasCV = vitals.isHypotension
+            || AnaphylaxisSymptomCatalog.hasUrinaryIncontinence(selectedSymptoms)
+        let hasModerateGI = AnaphylaxisSymptomCatalog.hasModerateOrSevereGISymptoms(selectedSymptoms)
 
+        // «Острое начало» в осмотре не фиксируется — критерий 1 оценивается по симптомам и АД.
         let criterion1 = hasSkin && (hasResp || hasCV)
 
-        let categories = [hasSkin, hasResp, vitals.isHypotension, hasGI].filter { $0 }.count
+        let categories = [hasSkin, hasResp, vitals.isHypotension, hasModerateGI].filter { $0 }.count
         let criterion2 = (hadKnownAllergenContact == true) && categories >= 2
 
         let criterion3 = (hadKnownAllergenContact == true) && isNIAIDHypotension(vitals: vitals)
@@ -147,7 +160,7 @@ final class ClinicalConclusionEngine {
             return DiagnosisCheckResult(
                 title: "Анафилаксия (вариант 2, NIAID/FAAN 2005)",
                 status: .notEnoughData,
-                reason: "Контакт с аллергеном не указан — критерии 2 и 3 не оцениваются."
+                reason: "Воздействие вероятного/известного аллергена не указано — критерии 2 и 3 не оцениваются."
             )
         }
 
@@ -182,27 +195,44 @@ final class ClinicalConclusionEngine {
 
     private func evaluateWAOVariant(
         selectedSymptoms: [Symptom],
-        vitals: Vitals
+        vitals: Vitals,
+        hadKnownAllergenContact: Bool?
     ) -> DiagnosisCheckResult {
-        let hasSkin = AnaphylaxisSymptomCatalog.matchesAny(selectedSymptoms, keywords: AnaphylaxisSymptomCatalog.skinMucousKeywords)
-        let hasResp = AnaphylaxisSymptomCatalog.matchesAny(selectedSymptoms, keywords: AnaphylaxisSymptomCatalog.respiratoryKeywords)
-        let hasCV = AnaphylaxisSymptomCatalog.matchesAny(selectedSymptoms, keywords: AnaphylaxisSymptomCatalog.cardiovascularKeywords)
-        let hasGI = AnaphylaxisSymptomCatalog.matchesAny(selectedSymptoms, keywords: AnaphylaxisSymptomCatalog.gastrointestinalKeywords)
+        let hasSkin = AnaphylaxisSymptomCatalog.matchesAny(
+            selectedSymptoms,
+            keywords: AnaphylaxisSymptomCatalog.waoSkinMucousKeywords
+        )
+        let hasResp = AnaphylaxisSymptomCatalog.matchesAny(
+            selectedSymptoms,
+            keywords: AnaphylaxisSymptomCatalog.waoRespiratoryKeywords
+        )
+        let hasCV = isWAOHypotension(vitals: vitals)
+            || AnaphylaxisSymptomCatalog.matchesAny(
+                selectedSymptoms,
+                keywords: AnaphylaxisSymptomCatalog.waoCardiovascularKeywords
+            )
+        let hasModerateGI = AnaphylaxisSymptomCatalog.hasModerateOrSevereGISymptoms(selectedSymptoms)
 
-        let criterion1 = hasSkin && (hasResp || hasCV || hasGI)
-        let criterion2 = isWAOHypotension(vitals: vitals) || hasResp
+        let criterion1 = hasSkin && (hasResp || hasCV || hasModerateGI)
+        let criterion2 = (hadKnownAllergenContact == true)
+            && (isWAOHypotension(vitals: vitals) || hasResp)
 
         if criterion1 || criterion2 {
             var parts: [String] = []
             if criterion1 { parts.append("Критерий 1") }
-            if criterion2 {
-                if isWAOHypotension(vitals: vitals) { parts.append("снижение САД") }
-                if hasResp { parts.append("респираторные нарушения") }
-            }
+            if criterion2 { parts.append("Критерий 2") }
             return DiagnosisCheckResult(
                 title: "Анафилаксия (вариант 3, WAO 2020)",
                 status: .confirmed,
                 reason: "Выполнено: \(parts.joined(separator: ", "))."
+            )
+        }
+
+        if hadKnownAllergenContact == nil {
+            return DiagnosisCheckResult(
+                title: "Анафилаксия (вариант 3, WAO 2020)",
+                status: .notEnoughData,
+                reason: "Воздействие вероятного/известного аллергена не указано — критерий 2 не оценивается."
             )
         }
 
@@ -260,29 +290,48 @@ final class ClinicalConclusionEngine {
     private func buildConclusionText(
         severityGrade: Int,
         activeSystems: [SystemType],
-        primary: DiagnosisCheckResult,
+        anaphylaxisConfirmed: Bool,
         urticariaAngioedemaText: String?
     ) -> String {
-        let systemNames = activeSystems.map(\.displayName).sorted().joined(separator: ", ").lowercased()
+        let systemPhrase = involvedSystemsPhrase(activeSystems)
 
-        if primary.status == .confirmed {
+        if anaphylaxisConfirmed {
+            let severityLabel: String
             switch severityGrade {
             case 3:
-                return "ОАР 3 степени (анафилаксия лёгкой степени – \(systemNames))"
+                severityLabel = "анафилаксия лёгкой степени"
             case 4:
-                return "ОАР 4 степени (анафилаксия средней степени – \(systemNames))"
+                severityLabel = "анафилаксия среднетяжелой степени"
             case 5:
-                return "ОАР 5 степени (тяжёлая анафилаксия / анафилактический шок – \(systemNames))"
+                severityLabel = "тяжёлая анафилаксия / анафилактический шок"
             default:
-                return "ОАР \(severityGrade) степени (анафилаксия – \(systemNames))"
+                severityLabel = "анафилаксия"
             }
+
+            if systemPhrase.isEmpty {
+                return "ОАР \(severityGrade) степени тяжести (\(severityLabel))"
+            }
+            return "ОАР \(severityGrade) степени тяжести (\(severityLabel) – \(systemPhrase))"
         }
 
         if let urticariaAngioedemaText {
-            return "ОАР \(severityGrade) степени (\(urticariaAngioedemaText))"
+            return "ОАР \(severityGrade) степени тяжести (\(urticariaAngioedemaText))"
         }
 
-        return "ОАР \(severityGrade) степени"
+        return "ОАР \(severityGrade) степени тяжести"
+    }
+
+    private func involvedSystemsPhrase(_ systems: [SystemType]) -> String {
+        var labels: [String] = []
+        if systems.contains(.skin) || systems.contains(.mucous) {
+            labels.append("кожно-слизистые")
+        }
+        if systems.contains(.respiratory) { labels.append("респираторные") }
+        if systems.contains(.cardiovascular) { labels.append("кардиоваскулярные") }
+        if systems.contains(.neurological) { labels.append("неврологические") }
+        if systems.contains(.gastrointestinal) { labels.append("гастроинтестинальные") }
+        guard !labels.isEmpty else { return "" }
+        return labels.joined(separator: ", ") + " симптомы"
     }
 
     private func buildDetailsText(
@@ -294,9 +343,9 @@ final class ClinicalConclusionEngine {
     ) -> String {
         var lines: [String] = []
         if let allergen = probableAllergen?.trimmingCharacters(in: .whitespacesAndNewlines), !allergen.isEmpty {
-            lines.append("Вероятный аллерген: \(allergen)")
+            lines.append("Воздействие вероятного/известного аллергена: \(allergen)")
         } else {
-            lines.append("Вероятный аллерген: не указан")
+            lines.append("Воздействие вероятного/известного аллергена: не указано")
         }
         lines.append("\(primary.title): \(primary.status.rawValue). \(primary.reason)")
         lines.append("\(niaid.title): \(niaid.status.rawValue). \(niaid.reason)")
@@ -309,7 +358,7 @@ final class ClinicalConclusionEngine {
 }
 
 private extension Vitals {
-    /// true — аллерген указан; nil — не указан (не ошибка).
+    /// true — воздействие аллергена указано; nil — не указано (не ошибка).
     var inferredAllergenContact: Bool? {
         guard let value = probableAllergen?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else {
             return nil

@@ -121,9 +121,9 @@ class VitalsViewController: UIViewController {
         updateYearRowVisibility(animated: false)
 
         let (allergenContainer, allergenField) = createTextInputField(
-            title: "Вероятный аллерген / контакт (необязательно)",
+            title: "Воздействие вероятного/известного аллергена (необязательно)",
             key: "probableAllergen",
-            placeholder: "Например: орехи, укус, лекарство"
+            placeholder: "Например: орехи, укус насекомого, лекарство"
         )
         allergenField.keyboardType = .default
         allergenField.autocapitalizationType = .sentences

@@ -16,7 +16,7 @@ final class ClinicalConclusionEngineTests: XCTestCase {
         )
 
         XCTAssertEqual(result.niaidAnaphylaxis.status, .notEnoughData)
-        XCTAssertTrue(result.detailsText.contains("не указан"))
+        XCTAssertTrue(result.detailsText.contains("не указано"))
     }
 
     func testFilledAllergenEnablesNIAIDCriterion2() {
@@ -56,13 +56,13 @@ final class ClinicalConclusionEngineTests: XCTestCase {
         )
 
         XCTAssertEqual(result.primaryAnaphylaxis.status, .confirmed)
-        XCTAssertTrue(result.conclusionText.contains("анафилаксия средней"))
+        XCTAssertTrue(result.conclusionText.contains("анафилаксия среднетяжелой"))
     }
 
     func testWAOCriterion1SkinAndGI() {
         let symptoms = [
             symptom("Крапивница", system: .skin),
-            symptom("Рвота", system: .gastrointestinal)
+            symptom("Рвота", system: .gastrointestinal, subgrade: .moderate)
         ]
         let result = engine.buildConclusion(
             severityResult: makeSeverity(grade: 2, subgrades: [.skin: .light, .gastrointestinal: .moderate]),
@@ -87,10 +87,65 @@ final class ClinicalConclusionEngineTests: XCTestCase {
         XCTAssertTrue(result.conclusionText.contains("крапивница"))
     }
 
+    func testWAOCriterion2RequiresAllergenExposure() {
+        let symptoms = [symptom("Одышка", system: .respiratory)]
+        let result = engine.buildConclusion(
+            severityResult: makeSeverity(grade: 2, subgrades: [.respiratory: .light]),
+            selectedSymptoms: symptoms,
+            vitals: makeVitals(allergen: nil)
+        )
+
+        XCTAssertNotEqual(result.waoAnaphylaxis.status, .confirmed)
+        XCTAssertEqual(result.waoAnaphylaxis.status, .notEnoughData)
+    }
+
+    func testWAOCriterion2WithAllergenAndRespiratory() {
+        let symptoms = [symptom("Одышка", system: .respiratory)]
+        let result = engine.buildConclusion(
+            severityResult: makeSeverity(grade: 2, subgrades: [.respiratory: .light]),
+            selectedSymptoms: symptoms,
+            vitals: makeVitals(allergen: "Пенициллин")
+        )
+
+        XCTAssertEqual(result.waoAnaphylaxis.status, .confirmed)
+        XCTAssertTrue(result.waoAnaphylaxis.reason.contains("Критерий 2"))
+    }
+
+    func testNIAIDCriterion2CountsOnlyModerateGI() {
+        let symptoms = [
+            symptom("Крапивница", system: .skin),
+            symptom("Тошнота", system: .gastrointestinal, subgrade: .light)
+        ]
+        let result = engine.buildConclusion(
+            severityResult: makeSeverity(grade: 2, subgrades: [.skin: .light, .gastrointestinal: .light]),
+            selectedSymptoms: symptoms,
+            vitals: makeVitals(allergen: "Молоко")
+        )
+
+        XCTAssertNotEqual(result.niaidAnaphylaxis.status, .confirmed)
+    }
+
+    func testNIAIDConfirmedByVariantUsesCurrentOARGradeInConclusion() {
+        let symptoms = [
+            symptom("Крапивница", system: .skin),
+            symptom("Одышка", system: .respiratory)
+        ]
+        let result = engine.buildConclusion(
+            severityResult: makeSeverity(grade: 2, subgrades: [.skin: .light, .respiratory: .light]),
+            selectedSymptoms: symptoms,
+            vitals: makeVitals(allergen: "Арахис")
+        )
+
+        XCTAssertEqual(result.niaidAnaphylaxis.status, .confirmed)
+        XCTAssertTrue(result.conclusionText.contains("ОАР 2 степени тяжести"))
+        XCTAssertTrue(result.conclusionText.contains("анафилаксия"))
+        XCTAssertFalse(result.conclusionText.contains("лёгкой степени"))
+    }
+
     // MARK: - Helpers
 
-    private func symptom(_ name: String, system: SystemType) -> Symptom {
-        Symptom(name: name, system: system, defaultSubgradeHint: .light, isSelected: true)
+    private func symptom(_ name: String, system: SystemType, subgrade: Subgrade = .light) -> Symptom {
+        Symptom(name: name, system: system, defaultSubgradeHint: subgrade, isSelected: true)
     }
 
     private func makeSeverity(grade: Int, subgrades: [SystemType: Subgrade]) -> SeverityResult {

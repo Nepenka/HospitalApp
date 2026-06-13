@@ -387,9 +387,9 @@ class ResultViewController: UIViewController {
     private func allergenSummaryText() -> String {
         if let allergen = viewModel.vitals.probableAllergen?.trimmingCharacters(in: .whitespacesAndNewlines),
            !allergen.isEmpty {
-            return "Вероятный аллерген: \(allergen)\n(учитывается в критериях NIAID 2–3)"
+            return "Воздействие вероятного/известного аллергена: \(allergen)\n(учитывается в критериях NIAID 2–3 и WAO 2)"
         }
-        return "Вероятный аллерген: не указан\n(критерии NIAID 2–3 не применяются без контакта)"
+        return "Воздействие вероятного/известного аллергена: не указано\n(критерии, зависящие от аллергена, не применяются)"
     }
     
     @objc private func newExaminationTapped() {
