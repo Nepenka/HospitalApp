@@ -221,6 +221,8 @@ struct Vitals: Codable {
     var heartRate: Int? // ЧСС (уд/мин)
     var respiratoryRate: Int? // ЧД (в мин)
     var gcs: Int? // GCS (3-15)
+    /// Вероятный аллерген / контакт (необязательно).
+    var probableAllergen: String?
     
     // Вычисляемые свойства
     var meanArterialPressure: Double? {

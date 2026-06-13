@@ -17,7 +17,6 @@ class ResultViewModel {
     @Published var diagnosis: String = ""
     @Published var perSystemSubgrades: [SystemType: Subgrade] = [:]
     @Published var editingExaminationId: UUID?
-    @Published var hadKnownAllergenContact: Bool?
     
     private let repository: ExaminationRepositoryProtocol
     private let severityEngine: SeverityEngine
@@ -60,18 +59,12 @@ class ResultViewModel {
         }
     }
 
-    func updateKnownAllergenContact(_ value: Bool?) {
-        hadKnownAllergenContact = value
-        recalculateClinicalConclusion()
-    }
-
     private func recalculateClinicalConclusion() {
         guard let severityResult else { return }
         let conclusion = clinicalConclusionEngine.buildConclusion(
             severityResult: severityResult,
             selectedSymptoms: selectedSymptoms,
-            vitals: vitals,
-            hadKnownAllergenContact: hadKnownAllergenContact
+            vitals: vitals
         )
         clinicalConclusion = conclusion
         if diagnosis.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

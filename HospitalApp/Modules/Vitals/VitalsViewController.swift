@@ -119,6 +119,19 @@ class VitalsViewController: UIViewController {
         
         updateMonthsRowVisibility(animated: false)
         updateYearRowVisibility(animated: false)
+
+        let (allergenContainer, allergenField) = createTextInputField(
+            title: "Вероятный аллерген / контакт (необязательно)",
+            key: "probableAllergen",
+            placeholder: "Например: орехи, укус, лекарство"
+        )
+        allergenField.keyboardType = .default
+        allergenField.autocapitalizationType = .sentences
+        inputFields.append(allergenField)
+        contentView.addArrangedSubview(allergenContainer)
+        if let allergen = viewModel.vitals.probableAllergen {
+            allergenField.text = allergen
+        }
         
         // Добавляем информационные метки
         let mapLabel = createInfoLabel(text: "срАД: —")
@@ -191,6 +204,43 @@ class VitalsViewController: UIViewController {
             textField.heightAnchor.constraint(equalToConstant: 44)
         ])
         
+        return (container, textField)
+    }
+
+    private func createTextInputField(title: String, key: String, placeholder: String) -> (UIView, UITextField) {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = title
+        label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.numberOfLines = 0
+
+        let textField = UITextField()
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.borderStyle = .roundedRect
+        textField.keyboardType = .default
+        textField.placeholder = placeholder
+        textField.addTarget(self, action: #selector(textFieldChanged(_:)), for: .editingChanged)
+
+        fieldKeyMap[textField] = key
+
+        container.addSubview(label)
+        container.addSubview(textField)
+
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: container.topAnchor),
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+
+            textField.topAnchor.constraint(equalTo: label.bottomAnchor, constant: 8),
+            textField.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            textField.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            textField.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            textField.heightAnchor.constraint(equalToConstant: 44)
+        ])
+
         return (container, textField)
     }
     
@@ -327,6 +377,8 @@ class VitalsViewController: UIViewController {
             viewModel.updateRespiratoryRate(value)
         case "gcs":
             viewModel.updateGCS(value)
+        case "probableAllergen":
+            viewModel.updateProbableAllergen(textField.text)
         default:
             break
         }

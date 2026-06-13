@@ -91,4 +91,9 @@ class VitalsViewModel {
     func updateGCS(_ value: Int?) {
         vitals.gcs = value
     }
+
+    func updateProbableAllergen(_ value: String?) {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+        vitals.probableAllergen = (trimmed?.isEmpty == false) ? trimmed : nil
+    }
 }

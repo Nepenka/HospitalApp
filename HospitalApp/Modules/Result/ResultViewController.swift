@@ -68,19 +68,13 @@ class ResultViewController: UIViewController {
         return field
     }()
 
-    private let allergenContactLabel: UILabel = {
+    private let probableAllergenLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "Контакт с вероятным аллергеном:"
-        label.font = .systemFont(ofSize: 15, weight: .semibold)
+        label.font = .systemFont(ofSize: 14)
+        label.numberOfLines = 0
+        label.textColor = .secondaryLabel
         return label
-    }()
-
-    private let allergenContactControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: ["Неизвестно", "Нет", "Да"])
-        control.translatesAutoresizingMaskIntoConstraints = false
-        control.selectedSegmentIndex = 0
-        return control
     }()
     
     private let newExaminationButton: UIButton = {
@@ -128,8 +122,6 @@ class ResultViewController: UIViewController {
         
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
         newExaminationButton.addTarget(self, action: #selector(newExaminationTapped), for: .touchUpInside)
-        allergenContactControl.addTarget(self, action: #selector(allergenContactChanged(_:)), for: .valueChanged)
-        
         NSLayoutConstraint.activate([
             contentView.topAnchor.constraint(equalTo: view.topAnchor),
             contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -270,20 +262,17 @@ class ResultViewController: UIViewController {
             }
         }
         
-        // Переключатель контакта с аллергеном — внизу результата
-        let contactCard = makeCardView()
-        let contactStack = UIStackView(arrangedSubviews: [allergenContactLabel, allergenContactControl])
-        contactStack.axis = .vertical
-        contactStack.spacing = 8
-        contactStack.translatesAutoresizingMaskIntoConstraints = false
-        contactCard.addSubview(contactStack)
+        let allergenCard = makeCardView()
+        probableAllergenLabel.text = allergenSummaryText()
+        allergenCard.addSubview(probableAllergenLabel)
+        probableAllergenLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            contactStack.topAnchor.constraint(equalTo: contactCard.topAnchor, constant: 10),
-            contactStack.leadingAnchor.constraint(equalTo: contactCard.leadingAnchor, constant: 12),
-            contactStack.trailingAnchor.constraint(equalTo: contactCard.trailingAnchor, constant: -12),
-            contactStack.bottomAnchor.constraint(equalTo: contactCard.bottomAnchor, constant: -10)
+            probableAllergenLabel.topAnchor.constraint(equalTo: allergenCard.topAnchor, constant: 10),
+            probableAllergenLabel.leadingAnchor.constraint(equalTo: allergenCard.leadingAnchor, constant: 12),
+            probableAllergenLabel.trailingAnchor.constraint(equalTo: allergenCard.trailingAnchor, constant: -12),
+            probableAllergenLabel.bottomAnchor.constraint(equalTo: allergenCard.bottomAnchor, constant: -10)
         ])
-        stackView.addArrangedSubview(contactCard)
+        stackView.addArrangedSubview(allergenCard)
         
         scrollView.addSubview(stackView)
         severityCard.addSubview(scrollView)
@@ -375,8 +364,8 @@ class ResultViewController: UIViewController {
     
     private func statusColor(_ status: DiagnosisStatus) -> UIColor {
         switch status {
-        case .confirmed: return .systemRed
-        case .notConfirmed: return .systemGreen
+        case .confirmed: return .systemGreen
+        case .notConfirmed: return .systemRed
         case .notEnoughData: return .systemOrange
         }
     }
@@ -395,15 +384,12 @@ class ResultViewController: UIViewController {
         })
     }
 
-    @objc private func allergenContactChanged(_ sender: UISegmentedControl) {
-        switch sender.selectedSegmentIndex {
-        case 1:
-            viewModel.updateKnownAllergenContact(false)
-        case 2:
-            viewModel.updateKnownAllergenContact(true)
-        default:
-            viewModel.updateKnownAllergenContact(nil)
+    private func allergenSummaryText() -> String {
+        if let allergen = viewModel.vitals.probableAllergen?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !allergen.isEmpty {
+            return "Вероятный аллерген: \(allergen)\n(учитывается в критериях NIAID 2–3)"
         }
+        return "Вероятный аллерген: не указан\n(критерии NIAID 2–3 не применяются без контакта)"
     }
     
     @objc private func newExaminationTapped() {

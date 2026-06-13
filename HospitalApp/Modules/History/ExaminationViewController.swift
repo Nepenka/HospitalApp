@@ -107,7 +107,7 @@ extension ExaminationsHistoryViewController: UITableViewDataSource, UITableViewD
             guard let self = self else { return UIMenu() }
             
             let shareAction = UIAction(title: "Поделиться", image: UIImage(systemName: "square.and.arrow.up")) { _ in
-                let text = "\(exam.patient.fullName)\nДиагноз: \(exam.diagnosis)\nСтепень: \(exam.severityResult.severityGrade)"
+                let text = "\(exam.patient.fullName)\nДиагноз: \(exam.diagnosis)\nСтепень: \(exam.severityResult.severityGrade)\nСАД: \(exam.vitals.systolicBP ?? 0) мм.рт.cт \nСимптомы: \(exam.selectedSymptoms.prefix(3).map{"\($0.name) (\($0.effectiveSubgrade.shortName))"}.joined(separator: ", "))"
                 let activity = UIActivityViewController(activityItems: [text], applicationActivities: nil)
                 self.present(activity, animated: true)
             }

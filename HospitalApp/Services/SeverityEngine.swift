@@ -25,7 +25,7 @@ class SeverityEngine {
         
         // Инициализируем все системы как .none
         for system in SystemType.allCases {
-            result[system] = .none
+            result[system] = Subgrade.none
         }
         
         // Группируем симптомы по системам
