@@ -1,0 +1,31 @@
+:root {
+  --ink: #172521;
+  --muted: #65756f;
+  --line: #d8e3df;
+  --surface: #ffffff;
+  --surface-soft: #f7faf9;
+  --canvas: #f1f6f4;
+  --teal: #07866e;
+  --teal-dark: #056653;
+  --teal-soft: #e8f5f1;
+  --danger: #a23b32;
+  --warning: #8a6108;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --shadow-card: 0 16px 45px rgba(23, 54, 45, .08);
+}
+
+* { box-sizing: border-box; }
+html { background: var(--canvas); }
+body { margin: 0; color: var(--ink); background: radial-gradient(circle at 12% -10%, #ffffff 0, transparent 31%), var(--canvas); font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.45; }
+a { text-underline-offset: 3px; }
+.offlineBanner { position: sticky; top: 0; z-index: 1000; padding: 10px 16px; color: #5f4308; background: #fff0c7; border-bottom: 1px solid #dfc170; text-align: center; font-size: 12px; line-height: 1.45; }
+.offlineBanner strong { margin-right: 5px; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid #73d6c1; outline-offset: 3px; }
+input, select, textarea { transition: border-color .16s ease, box-shadow .16s ease; }
+input:hover, select:hover, textarea:hover { border-color: #9eb8b0 !important; }
+input:focus, select:focus, textarea:focus { border-color: var(--teal) !important; box-shadow: 0 0 0 4px rgba(7, 134, 110, .1); }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

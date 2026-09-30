@@ -1,0 +1,8 @@
+.accountBar { min-height: 48px; padding: 0 max(118px, calc((100vw - 1120px) / 2)); padding-left: max(28px, calc((100vw - 1120px) / 2)); display: flex; align-items: center; justify-content: space-between; gap: 20px; color: #d9ece7; background: linear-gradient(90deg, #123f35, #0d312a); font-size: 12px; }
+.accountBar > div { display: flex; align-items: center; gap: 8px; }
+.statusDot { width: 7px; height: 7px; border-radius: 50%; background: #5fd1b9; box-shadow: 0 0 0 3px #5fd1b926; }
+.accountBar nav { display: flex; align-items: center; gap: 18px; }
+.accountBar a { color: white; text-decoration: none; font-weight: 700; }
+.accountBar form { margin: 0; }
+.accountBar button { border: 0; background: transparent; color: #d9ece7; font-size: 12px; padding: 6px 0; }
+@media (max-width: 760px) { .accountBar { min-height: 58px; padding: 30px 104px 8px 14px; align-items: end; } .accountBar nav { gap: 11px; } }

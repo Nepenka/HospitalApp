@@ -1,0 +1,112 @@
+.shell { min-height: 100vh; padding: 0 28px 32px; }
+.header { max-width: 1120px; height: 88px; margin: 0 auto; display: flex; align-items: center; gap: 13px; }
+.header h1 { font-size: 22px; margin: 1px 0 0; letter-spacing: -0.5px; }
+.eyebrow { margin: 0; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; }
+.brandMark { width: 43px; height: 43px; border-radius: 13px; background: var(--teal); color: white; display: grid; place-items: center; font-weight: 800; box-shadow: 0 5px 16px #087f6830; }
+.draftBadge { margin-left: auto; padding: 6px 10px; border: 1px solid #bcd8d1; border-radius: 999px; color: #176a59; font-size: 12px; background: #edf8f5; }
+.steps { max-width: 760px; margin: 10px auto 24px; display: grid; grid-template-columns: repeat(4, 1fr); position: relative; }
+.steps::before { content: ""; position: absolute; left: 11%; right: 11%; top: 17px; height: 1px; background: #cbd9d4; }
+.step { position: relative; border: 0; background: transparent; color: #77827f; display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 12px; font-weight: 650; }
+.step span { z-index: 1; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #e4ebe8; border: 3px solid var(--canvas); }
+.stepActive { color: var(--teal-dark); }
+.stepActive span, .stepDone span { background: var(--teal); color: white; }
+.workspace { max-width: 1040px; margin: 0 auto; }
+.panel { background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 34px; box-shadow: var(--shadow-card); }
+.sectionHeading p, .resultHero div p { color: var(--teal); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.3px; margin: 0 0 7px; }
+.sectionHeading h2 { font-size: 28px; letter-spacing: -0.9px; margin: 0 0 7px; }
+.sectionHeading > span { color: var(--muted); line-height: 1.5; }
+.sectionHeadingRow { display: flex; align-items: start; justify-content: space-between; gap: 24px; }
+.selectedCounter { min-width: 90px; text-align: center; padding: 10px 15px; background: #eef7f4; border-radius: 13px; color: var(--teal-dark); }
+.selectedCounter strong, .selectedCounter span { display: block; }
+.selectedCounter strong { font-size: 22px; }
+.selectedCounter span { font-size: 11px; }
+.formGrid { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.fieldWide { grid-column: 1 / -1; }
+.formGrid label, .ageRow label { display: flex; flex-direction: column; gap: 8px; }
+.formGrid label > span, .ageRow label > span, .vitalField > span { font-size: 13px; font-weight: 750; }
+.formGrid b { color: #b33c32; }
+.formGrid input, .formGrid select, .ageRow input { width: 100%; border: 1px solid #cbd6d2; border-radius: 11px; min-height: 48px; padding: 0 13px; color: var(--ink); background: white; }
+.formGrid small, .vitalField small { color: var(--muted); line-height: 1.4; }
+.systemList { margin-top: 28px; display: grid; gap: 12px; }
+.systemCard { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.systemCard summary { list-style: none; padding: 16px 18px; font-weight: 780; cursor: pointer; display: flex; justify-content: space-between; background: #fbfdfc; }
+.systemCard summary::-webkit-details-marker { display: none; }
+.systemCard summary em { font-style: normal; min-width: 26px; height: 24px; border-radius: 12px; display: grid; place-items: center; background: #e8f1ee; color: var(--teal-dark); font-size: 12px; }
+.symptomGrid { padding: 8px 12px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid var(--line); }
+.symptom { min-height: 52px; border: 1px solid #dde6e3; border-radius: 10px; padding: 10px 11px; display: grid; grid-template-columns: 20px 1fr 25px; gap: 9px; align-items: center; font-size: 13px; line-height: 1.35; cursor: pointer; }
+.symptom input { width: 17px; height: 17px; accent-color: var(--teal); }
+.symptom i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 11px; background: #edf1ef; color: #52625e; }
+.symptomSelected { border-color: #6dc1b1; background: #eff9f6; }
+.symptom i[data-grade="moderate"] { background: #fff0c7; color: #825b00; }
+.symptom i[data-grade="severe"] { background: #fee1de; color: #a42d22; }
+.symptomOption { min-height: 76px; border: 1px solid #dde6e3; border-radius: 10px; padding: 10px 11px; display: grid; gap: 8px; font-size: 13px; line-height: 1.35; }
+.symptomOption > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 700; }
+.symptomOption i { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 11px; background: #edf1ef; color: #52625e; }
+.symptomOption i[data-grade="moderate"] { background: #fff0c7; color: #825b00; }
+.symptomOption i[data-grade="severe"] { background: #fee1de; color: #a42d22; }
+.symptomOption select { width: 100%; min-height: 40px; padding: 0 9px; border: 1px solid #cbd6d2; border-radius: 8px; color: var(--ink); background: white; font-size: 12px; }
+.ageRow { margin: 28px 0 16px; padding: 18px; border-radius: 14px; background: #f1f7f5; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.vitalsGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 13px; }
+.vitalField { border: 1px solid var(--line); border-radius: 13px; padding: 15px; display: flex; flex-direction: column; gap: 9px; }
+.vitalField div { display: flex; align-items: center; gap: 8px; }
+.vitalField input { min-width: 0; width: 100%; height: 42px; border: 1px solid #ccd7d3; border-radius: 9px; padding: 0 10px; font-size: 17px; font-weight: 700; }
+.vitalField em { min-width: 76px; color: var(--muted); font-style: normal; font-size: 12px; }
+.vitalFlagged { border-color: #e4a49d; background: #fff8f7; }
+.vitalFlagged small { color: #9b3027; font-weight: 700; }
+.error { margin-top: 12px; border: 1px solid #e8b0aa; background: #fff2f0; color: #9c2d24; border-radius: 11px; padding: 12px 15px; font-size: 13px; font-weight: 650; }
+.actions { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 4px 0; position: sticky; bottom: 0; }
+.primaryButton, .secondaryButton { min-height: 46px; border-radius: 11px; padding: 0 20px; border: 0; font-weight: 750; }
+.primaryButton { background: var(--teal); color: white; box-shadow: 0 7px 18px #087f6830; }
+.primaryButton:hover { background: var(--teal-dark); }
+.primaryButton span { margin-left: 14px; }
+.secondaryButton { background: white; color: var(--ink); border: 1px solid #cad6d2; }
+.resultLayout { display: grid; grid-template-columns: 310px 1fr; gap: 18px; align-items: start; }
+.resultHero { border-radius: 22px; padding: 28px; color: white; background: #b36d19; min-height: 320px; display: flex; flex-direction: column; justify-content: space-between; }
+.resultHero[data-grade="0"], .resultHero[data-grade="1"], .resultHero[data-grade="2"] { background: #167965; }
+.resultHero[data-grade="4"], .resultHero[data-grade="5"] { background: #a33a30; }
+.resultHero h2 { font-size: 28px; margin: 0; }
+.resultHero div p { color: #ffffffc7; }
+.resultHero > p { font-size: 12px; line-height: 1.5; color: #ffffffd1; }
+.gradeCircle { width: 86px; height: 86px; border: 2px solid #ffffff8a; border-radius: 50%; display: grid; place-items: center; font-size: 42px; font-weight: 800; }
+.subgradeGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 25px 0; }
+.subgradeGrid div { padding: 11px 13px; border-radius: 10px; background: #f4f7f6; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+.subgradeGrid strong { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #e3ebe8; }
+.subgradeGrid strong[data-subgrade="moderate"] { background: #ffedbd; color: #7d5700; }
+.subgradeGrid strong[data-subgrade="severe"] { background: #fbd9d5; color: #9e2f26; }
+.reasonBox { padding: 17px; background: #f5f8f7; border-radius: 13px; }
+.reasonBox h3 { margin: 0 0 10px; font-size: 14px; }
+.reasonBox ul { margin: 0; padding-left: 19px; color: #4c5b57; font-size: 13px; line-height: 1.65; }
+.confirm { display: flex; align-items: start; gap: 10px; margin-top: 18px; font-size: 13px; font-weight: 650; }
+.confirm input { width: 18px; height: 18px; accent-color: var(--teal); }
+.conclusion { margin: 20px 0 13px; font-size: 18px; line-height: 1.4; }
+.diagnosisResultGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.diagnosisResultGrid article { border: 1px solid #dbe4e1; border-radius: 12px; overflow: hidden; min-width: 0; }
+.diagnosisResultGrid article > div { padding: 11px; background: #f5f8f7; }
+.diagnosisResultGrid article[data-status="confirmed"] { border-color: #72baa9; }
+.diagnosisResultGrid article[data-status="confirmed"] > div { background: #eaf7f3; color: #116552; }
+.diagnosisResultGrid article[data-status="insufficient_data"] > div { background: #fff6df; color: #765300; }
+.diagnosisResultGrid h3 { margin: 0 0 4px; font-size: 13px; }
+.diagnosisResultGrid strong { font-size: 10px; }
+.diagnosisResultGrid ul { list-style: none; margin: 0; padding: 7px 10px; }
+.diagnosisResultGrid li { display: flex; gap: 6px; padding: 7px 0; border-bottom: 1px solid #edf1ef; font-size: 10px; line-height: 1.35; }
+.diagnosisResultGrid li:last-child { border: 0; }
+.diagnosisResultGrid li > b { color: #87918e; }
+.diagnosisResultGrid li[data-met="true"] > b { color: var(--teal); }
+.diagnosisResultGrid small { display: block; margin-top: 3px; color: var(--muted); }
+.emergencyNotice { margin-top: 13px; padding: 12px 14px; display: grid; gap: 4px; border-radius: 11px; background: #fff5df; color: #684b0a; font-size: 11px; line-height: 1.45; }
+.success { margin-top: 13px; border: 1px solid #9bcfc2; background: #ebf8f4; color: #126451; border-radius: 11px; padding: 12px 14px; font-size: 13px; font-weight: 700; }
+.secondaryActionLink { min-height: 46px; border-radius: 11px; padding: 0 20px; display: inline-flex; align-items: center; color: var(--ink); background: white; border: 1px solid #cad6d2; text-decoration: none; font-weight: 750; }
+.primaryButton:disabled { opacity: .6; cursor: wait; }
+.shell footer { max-width: 1040px; margin: 24px auto 0; text-align: center; color: #7c8985; font-size: 11px; }
+@media (max-width: 760px) {
+  .shell { padding: 0 14px 24px; }
+  .header { height: 74px; }
+  .steps { margin-top: 4px; }
+  .step { font-size: 10px; }
+  .panel { padding: 22px 17px; border-radius: 17px; }
+  .formGrid, .symptomGrid, .vitalsGrid, .resultLayout, .diagnosisResultGrid { grid-template-columns: 1fr; }
+  .fieldWide { grid-column: auto; }
+  .sectionHeading h2 { font-size: 24px; }
+  .resultHero { min-height: 240px; }
+  .actions { background: linear-gradient(transparent, var(--canvas) 24%); padding-top: 25px; }
+}

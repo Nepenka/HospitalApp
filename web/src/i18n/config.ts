@@ -1,0 +1,47 @@
+export const locales = ["ru", "en"] as const;
+export type Locale = (typeof locales)[number];
+export const defaultLocale: Locale = "ru";
+
+const en: Record<string, string> = {
+  "Русский": "Russian", "Английский": "English", "Язык интерфейса": "Interface language",
+  "Клиническая поддержка": "Clinical decision support", "Прототип": "Prototype",
+  "История": "Patient history", "Организация": "Organization", "Выйти": "Sign out",
+  "Пациент": "Patient", "Симптомы": "Symptoms", "Показатели": "Vitals", "Результат": "Result",
+  "Этапы осмотра": "Examination steps", "Редактирование осмотра": "Edit examination", "Новый осмотр": "New examination",
+  "Данные пациента": "Patient details", "Заполните основные сведения перед оценкой симптомов.": "Enter the basic details before assessing symptoms.",
+  "ФИО пациента": "Patient name", "Например, Иванов Иван Иванович": "For example, John Smith",
+  "Вероятный аллерген": "Suspected allergen", "Препарат, пищевой продукт…": "Medication, food product…",
+  "Можно оставить пустым, если аллерген неизвестен.": "Leave blank if the allergen is unknown.",
+  "Контакт с аллергеном": "Allergen exposure", "Неизвестно": "Unknown", "Да, подтверждён/вероятен": "Yes, confirmed or suspected", "Нет": "No", "Да": "Yes",
+  "Используется в NIAID/FAAN и WAO 2020.": "Used in the NIAID/FAAN and WAO 2020 criteria.",
+  "Острое начало": "Acute onset", "Не указано": "Not specified", "Начало в течение минут–нескольких часов.": "Onset within minutes to several hours.",
+  "Шаг 2": "Step 2", "Клинические симптомы": "Clinical symptoms", "Отметьте все наблюдаемые признаки. Текст симптомов показан полностью.": "Select all observed signs. Symptom descriptions are shown in full.",
+  "выбрано": "selected", "Не выбрано — открыть список": "Not selected — open list", "Вариант симптома": "Symptom option",
+  "Шаг 3": "Step 3", "Витальные показатели": "Vital signs", "Возрастные ориентиры обновляются автоматически и не заменяют клиническую оценку.": "Age based thresholds update automatically and do not replace clinical judgment.",
+  "Полных лет": "Years", "Месяцев": "Months", "Систолическое АД": "Systolic BP", "Диастолическое АД": "Diastolic BP", "Исходное САД": "Baseline SBP",
+  "мм рт. ст.": "mmHg", "Для оценки снижения более чем на 30%": "Used to assess a decrease greater than 30%", "ЧСС": "Heart rate", "уд/мин": "bpm", "ЧД": "Respiratory rate", "в минуту": "per min", "Шкала комы Глазго": "Glasgow Coma Scale", "баллы": "points",
+  "Результат оценки": "Assessment result", "степени": "grade", "Результат является поддержкой принятия решения и требует подтверждения врачом.": "This result supports clinical decision making and requires physician confirmation.",
+  "Сводка": "Summary", "Вероятный аллерген не указан": "Suspected allergen not specified", "Что повлияло на результат": "Factors affecting the result",
+  "Клинически важно": "Clinical notice", "Невыполнение критериев не исключает анафилаксию и не должно задерживать неотложную помощь.": "Not meeting the criteria does not rule out anaphylaxis and must not delay emergency care.",
+  "Я проверил(а) данные и подтверждаю результат осмотра": "I have reviewed the data and confirm the examination result",
+  "Назад": "Back", "Продолжить": "Continue", "Рассчитать результат": "Calculate result", "Открыть запись": "Open record", "Сохранить изменения": "Save changes", "Сохранить осмотр": "Save examination", "Сохранение…": "Saving…",
+  "Осмотры сохраняются на сервере в зашифрованном виде": "Examinations are stored on the server in encrypted form",
+  "Укажите ФИО пациента.": "Enter the patient name.", "Укажите вероятный аллерген или измените статус контакта.": "Enter the suspected allergen or change the exposure status.", "Выберите хотя бы один симптом.": "Select at least one symptom.",
+  "Заполните все обязательные числовые поля.": "Complete all required numeric fields.", "Все обязательные показатели должны быть положительными целыми числами.": "All required values must be positive whole numbers.", "Проверьте диапазоны: SpO₂ 1–100%, GCS 3–15, месяцы 0–11.": "Check the ranges: SpO₂ 1–100%, GCS 3–15, months 0–11.",
+  "Перед сохранением подтвердите, что проверили введённые данные.": "Confirm that you reviewed the entered data before saving.", "Нет подключения к сети. Не закрывайте вкладку: сохранение станет доступно после восстановления связи.": "You are offline. Keep this tab open; saving will be available when the connection returns.",
+  "История пациентов": "Patient history", "Сохранённые осмотры в пределах доступной организации": "Saved examinations available to your organization", "Запись удалена из истории пациентов.": "The record was removed from patient history.",
+  "Поиск": "Search", "Поиск по истории": "Search history", "Поиск по ФИО или аллергену": "Search by patient name or allergen", "Фильтр диагноза": "Diagnosis filter", "Все результаты": "All results", "Анафилаксия подтверждена": "Anaphylaxis confirmed", "Не подтверждена": "Not confirmed",
+  "С даты": "From date", "По дату": "To date", "Найти": "Search", "Сбросить": "Clear", "Найдено записей": "Records found", "Даты указаны по времени Минска.": "Dates use Minsk time.",
+  "Ничего не найдено": "No records found", "История пока пуста": "History is empty", "Измените условия поиска.": "Change the search criteria.", "Завершите и сохраните первый осмотр.": "Complete and save the first examination.",
+  "Дата": "Date", "Аллерген": "Allergen", "Степень": "Grade", "Заключение": "Conclusion", "Действие": "Action", "Не указан": "Not specified", "Подтверждена": "Confirmed", "Открыть": "Open",
+  "Страницы истории": "History pages", "Страница": "Page", "из": "of", "Далее": "Next",
+  "История осмотров": "Examination history", "К истории": "Back to history", "Итоговое заключение": "Final conclusion", "Алгоритм": "Algorithm", "Каталог": "Catalog", "Исходные данные": "Source data", "Последнее изменение": "Last updated",
+  "Диагностические критерии": "Diagnostic criteria", "Возраст": "Age", "лет": "years", "мес.": "months", "АД": "BP",
+  "Редактировать": "Edit", "Копировать заключение": "Copy conclusion", "Печать": "Print", "Скачать PDF": "Download PDF", "Удалить": "Delete", "Удалить запись из истории?": "Delete this history record?", "Да, удалить": "Yes, delete", "Отмена": "Cancel",
+  "Персональные данные пациента": "Patient personal data", "Заключение содержит медицинские и персональные данные. Передавайте его только уполномоченным лицам и храните в защищённом месте.": "The report contains medical and personal data. Share it only with authorized people and store it securely.",
+  "Проверьте выбранный принтер и заберите распечатку.": "Check the selected printer and collect the printout.", "Проверьте папку загрузок и доступ к файлу.": "Check the downloads folder and access to the file.", "Проверьте, куда вы вставляете скопированный текст.": "Check where you paste the copied text.", "Понимаю, продолжить": "I understand, continue", "Подготовка…": "Preparing…",
+  "Защищённый доступ": "Secure access", "Вход в систему": "Sign in", "Доступ разрешён только зарегистрированным сотрудникам и администраторам организаций.": "Access is limited to registered staff and organization administrators.", "Логин": "Login", "Пароль": "Password", "Войти": "Sign in",
+  "Панель администратора": "Administrator panel", "Обзор": "Overview", "Организации": "Organizations", "Управление": "Management", "Учётные записи": "Accounts", "Активные": "Active", "Статус": "Status", "Пользователи": "Users",
+};
+
+export function translate(locale: Locale, text: string): string { return locale === "en" ? en[text] ?? text : text; }
