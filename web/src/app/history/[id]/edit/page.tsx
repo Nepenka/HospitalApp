@@ -6,7 +6,7 @@ import { getExamination } from "@/server/examinations/repository";
 export const dynamic = "force-dynamic";
 
 export default async function EditExaminationPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole("clinician", "organization_owner");
+  const session = await requireRole("clinician");
   const { id } = await params;
   const examination = await getExamination(id, session.user);
   if (!examination) notFound();

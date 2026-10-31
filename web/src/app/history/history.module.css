@@ -114,3 +114,17 @@
 @media (max-width: 1050px) { .toolbar { grid-template-columns: 1fr 1fr; } .datePicker { grid-column: 1 / -1; } }
 @media (max-width: 800px) { .page { padding: 70px 14px 50px; } .header { align-items: stretch; flex-direction: column; } .toolbar, .detailGrid, .diagnosisGrid, .symptomColumns, .vitalList { grid-template-columns: 1fr; } .datePicker { grid-column: auto; } .calendarPopover { position: fixed; inset: auto 12px 12px; width: auto; max-height: calc(100vh - 100px); overflow-y: auto; } .calendars { grid-template-columns: 1fr; } .calendarMonth[data-secondary="true"] { display: none; } .card { padding: 17px; } .primaryLink { align-self: flex-start; } }
 @media print { .page { max-width: none; padding: 0; } .headerActions, .exportOverlay, .exportMessage, .primaryLink, .secondaryLink { display: none !important; } .card, .summaryCard, .diagnosisCard { box-shadow: none; break-inside: avoid; } .summaryCard { background: white !important; color: black !important; border: 1px solid #cbd6d2; } .bigGrade { border-color: #555; } }
+.physicianComment { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; color: var(--ink); }
+.physicianComment[data-editing="true"] { display: none; }
+.commentEditor { min-width: 0; }
+.commentHeading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 18px 0 12px; }
+.commentHeading h2 { margin: 0; font-size: 20px; }
+.commentHint, .commentForm > small { color: var(--muted); font-size: 12px; }
+.commentForm { display: grid; gap: 10px; margin: 16px 0; }
+.commentForm textarea { width: 100%; min-height: 140px; resize: vertical; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); line-height: 1.6; }
+.commentActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.commentActions .primaryLink { appearance: none; border: 0; }
+.commentHeading button, .commentActions button { font: inherit; font-weight: 760; }
+.commentActions button:disabled { cursor: wait; opacity: .6; }
+.commentConflictLink { display: block; margin-top: 8px; color: var(--teal-dark); font-weight: 750; }
+@media print { .commentHeading button, .commentForm, .commentEditor .successNotice, .commentEditor .errorNotice { display: none !important; } .physicianComment[data-editing="true"] { display: block; } }

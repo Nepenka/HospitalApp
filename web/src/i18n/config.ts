@@ -3,6 +3,12 @@ export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = "ru";
 
 const en: Record<string, string> = {
+  "Комментарий/уточнение врача": "Physician comment / clarification",
+  "Необязательно. Не изменяет рассчитанное заключение.": "Optional. Does not change the calculated conclusion.",
+  "Дата начала реакции": "Reaction onset date",
+  "Время начала реакции": "Reaction onset time",
+  "Необязательно. Оставьте пустым, если дата неизвестна.": "Optional. Leave blank if the date is unknown.",
+  "Необязательно, по времени Минска. Неизвестное время не заполняйте.": "Optional, in Minsk time. Leave blank if the time is unknown.",
   "Русский": "Russian", "Английский": "English", "Язык интерфейса": "Interface language",
   "Клиническая поддержка": "Clinical decision support", "Прототип": "Prototype",
   "История": "Patient history", "Организация": "Organization", "Выйти": "Sign out",

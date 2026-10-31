@@ -11,17 +11,26 @@ export interface ExaminationInput {
   probableAllergen: string;
   allergenContact: TriState;
   acuteOnset: TriState;
+  physicianComment?: string;
+  reactionDate?: string;
+  reactionTime?: string;
   selectedSymptoms: Array<{ id: string; optionId?: string }>;
   vitals: Vitals;
 }
 
 export interface StoredExamination {
+  /** Explicit clinician marking only. Legacy records default to real records. */
+  isTest?: boolean;
   id: string;
   organizationId: string;
   patient: { id: string; fullName: string };
   probableAllergen: string | null;
   allergenContact: TriState;
   acuteOnset: TriState;
+  physicianComment: string | null;
+  /** Known local date/time, Europe/Minsk; absent time does not imply midnight. */
+  reactionDate: string | null;
+  reactionTime: string | null;
   examinedAt: string;
   createdAt: string;
   createdBy: string;

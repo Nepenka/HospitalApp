@@ -8,8 +8,9 @@ import { CLINICAL_ALGORITHM_VERSION, evaluateAnaphylaxis } from "@/domain/clinic
 import { calculateSeverity } from "@/domain/clinical/severity";
 import type { TriState, Vitals } from "@/domain/clinical/types";
 import type { ExaminationInput, StoredExamination } from "@/domain/examinations/types";
+import { annotationErrorMessage, normalizeAnnotations } from "@/domain/examinations/annotations";
 import { requireRole } from "@/server/auth/session";
-import { createExamination, getExamination, softDeleteExamination, updateExamination as updateStoredExamination } from "@/server/examinations/repository";
+import { createExamination, getExamination, softDeleteExamination, updateExamination as updateStoredExamination, updatePhysicianComment as updateStoredPhysicianComment } from "@/server/examinations/repository";
 import { auditSecurityEvent } from "@/server/security/audit";
 import { getLocale } from "@/i18n/server";
 
@@ -42,11 +43,13 @@ function validateVitals(vitals: Vitals, locale: "ru" | "en"): string | null {
 }
 
 export async function saveExamination(input: ExaminationInput): Promise<SaveExaminationResult> {
-  const [session, locale] = await Promise.all([requireRole("clinician", "organization_owner"), getLocale()]);
+  const [session, locale] = await Promise.all([requireRole("clinician"), getLocale()]);
   const m = (ru: string, en: string) => locale === "en" ? en : ru;
   if (!session.user.organizationId) return { ok: false, message: m("Учётная запись не связана с организацией.", "The account is not linked to an organization.") };
   const fullName = input.fullName.trim().replace(/\s+/g, " ");
   const probableAllergen = input.probableAllergen.trim().replace(/\s+/g, " ");
+  const annotations = normalizeAnnotations(input);
+  if (!annotations.ok) return { ok: false, message: annotationErrorMessage(annotations.error, locale) };
 
   if (fullName.length < 3 || fullName.length > 200) return { ok: false, message: m("Укажите корректное ФИО пациента.", "Enter a valid patient name.") };
   if (probableAllergen.length > 200) return { ok: false, message: m("Название аллергена слишком длинное.", "The allergen name is too long.") };
@@ -78,6 +81,7 @@ export async function saveExamination(input: ExaminationInput): Promise<SaveExam
     allergenContact: input.allergenContact,
     acuteOnset: input.acuteOnset,
     examinedAt: now,
+    ...annotations.value,
     createdAt: now,
     createdBy: session.user.id,
     updatedAt: now,
@@ -105,10 +109,12 @@ export async function saveExamination(input: ExaminationInput): Promise<SaveExam
 }
 
 export async function updateExamination(input: UpdateExaminationInput): Promise<SaveExaminationResult> {
-  const [session, locale] = await Promise.all([requireRole("clinician", "organization_owner"), getLocale()]);
+  const [session, locale] = await Promise.all([requireRole("clinician"), getLocale()]);
   const m = (ru: string, en: string) => locale === "en" ? en : ru;
   const fullName = input.fullName.trim().replace(/\s+/g, " ");
   const probableAllergen = input.probableAllergen.trim().replace(/\s+/g, " ");
+  const annotations = normalizeAnnotations(input);
+  if (!annotations.ok) return { ok: false, message: annotationErrorMessage(annotations.error, locale) };
   if (!input.examinationId || !Number.isInteger(input.expectedVersion) || input.expectedVersion < 1) return { ok: false, message: m("Некорректная версия записи.", "Invalid record version.") };
   if (fullName.length < 3 || fullName.length > 200) return { ok: false, message: m("Укажите корректное ФИО пациента.", "Enter a valid patient name.") };
   if (probableAllergen.length > 200) return { ok: false, message: m("Название аллергена слишком длинное.", "The allergen name is too long.") };
@@ -126,6 +132,7 @@ export async function updateExamination(input: UpdateExaminationInput): Promise<
   const conclusion = evaluateAnaphylaxis({ selected, vitals: input.vitals, severity, acuteOnset: input.acuteOnset, allergenContact: input.allergenContact });
   const replacement: StoredExamination = {
     ...current,
+    ...annotations.value,
     patient: { ...current.patient, fullName },
     probableAllergen: probableAllergen || null,
     allergenContact: input.allergenContact,
@@ -154,7 +161,7 @@ export async function updateExamination(input: UpdateExaminationInput): Promise<
 }
 
 export async function deleteExaminationAction(formData: FormData): Promise<void> {
-  const session = await requireRole("clinician", "organization_owner");
+  const session = await requireRole("clinician");
   const examinationId = String(formData.get("examinationId") ?? "");
   try {
     await softDeleteExamination(examinationId, session.user);
@@ -165,4 +172,30 @@ export async function deleteExaminationAction(formData: FormData): Promise<void>
   }
   revalidatePath("/history");
   redirect("/history?deleted=1");
+}
+
+export type CommentUpdateResult =
+  | { ok: true; message: string; physicianComment: string | null; rowVersion: number }
+  | { ok: false; message: string; conflict?: boolean };
+
+export async function updatePhysicianComment(input: { examinationId: string; expectedVersion: number; physicianComment: unknown }): Promise<CommentUpdateResult> {
+  const [session, locale] = await Promise.all([requireRole("clinician"), getLocale()]);
+  const m = (ru: string, en: string) => locale === "en" ? en : ru;
+  if (!input || typeof input.examinationId !== "string" || !input.examinationId || input.examinationId.length > 128 || !Number.isSafeInteger(input.expectedVersion) || input.expectedVersion < 1) return { ok: false, message: m("Некорректная версия записи.", "Invalid record version.") };
+  if (typeof input.physicianComment !== "string") return { ok: false, message: annotationErrorMessage("comment", locale) };
+  const annotations = normalizeAnnotations({ physicianComment: input.physicianComment });
+  if (!annotations.ok) return { ok: false, message: annotationErrorMessage(annotations.error, locale) };
+  try {
+    const updated = await updateStoredPhysicianComment(input.examinationId, input.expectedVersion, session.user, annotations.value.physicianComment);
+    auditSecurityEvent("examination.comment_updated", { actorId: session.user.id, organizationId: session.user.organizationId ?? undefined, outcome: "success", resourceId: updated.id });
+    revalidatePath("/history");
+    revalidatePath(`/history/${updated.id}`);
+    revalidatePath(`/history/${updated.id}/edit`);
+    return { ok: true, message: m("Комментарий сохранён.", "Comment saved."), physicianComment: updated.physicianComment, rowVersion: updated.rowVersion };
+  } catch (error) {
+    auditSecurityEvent("examination.comment_updated", { actorId: session.user.id, organizationId: session.user.organizationId ?? undefined, outcome: "failure", resourceId: input.examinationId });
+    if ((error as Error).message === "EXAMINATION_CONFLICT") return { ok: false, conflict: true, message: m("Запись уже изменилась. Ваш текст оставлен в поле. Откройте актуальную запись в новой вкладке и проверьте изменения перед повторной правкой.", "The record has changed. Your text remains in the field. Open the current record in a new tab and review the changes before editing again.") };
+    if ((error as Error).message === "EXAMINATION_NOT_FOUND") return { ok: false, message: m("Запись не найдена или уже удалена.", "The record was not found or has already been deleted.") };
+    return { ok: false, message: m("Не удалось сохранить комментарий. Ваш текст оставлен в поле — повторите попытку.", "Could not save the comment. Your text remains in the field — try again.") };
+  }
 }

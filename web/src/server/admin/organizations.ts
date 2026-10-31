@@ -1,6 +1,7 @@
 import "server-only";
 import { listBillingEntries, listOrganizations, type BillingCurrency } from "@/server/identity/store";
-import { billingCurrencies, buildBillingChart, summarizeBilling, type BillingChartPoint, type CurrencyFinancialSummary } from "./billing";
+import { billingCurrencies, buildBillingChart, summarizeBilling, summarizeOrganizationBilling, type BillingChartPoint, type CurrencyFinancialSummary } from "./billing";
+import { licenseState } from "@/domain/administration/license";
 
 export interface OrganizationAdminRow {
   id: string;
@@ -11,6 +12,7 @@ export interface OrganizationAdminRow {
   users: number;
   activeUsers: number;
   status: "active" | "suspended";
+  archivedAt?:string|null;
   createdAt: string;
   lastActivityAt: string | null;
   finances: Record<BillingCurrency, CurrencyFinancialSummary>;
@@ -18,7 +20,7 @@ export interface OrganizationAdminRow {
 
 export interface AdminDashboardData {
   organizations: OrganizationAdminRow[];
-  metrics: { organizations: number; users: number; activeUsers: number; newOrganizationsThisMonth: number };
+  metrics: { organizations: number; users: number; activeUsers: number; newOrganizationsThisMonth: number; activeLicenses: number; expiredLicenses: number };
   organizationGrowth: Array<{ key: string; label: string; count: number }>;
   finances: { totals: Record<BillingCurrency, CurrencyFinancialSummary>; charts: Record<BillingCurrency, BillingChartPoint[]> };
 }
@@ -42,7 +44,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     organizations,
     organizationGrowth,
     finances: {
-      totals: summarizeBilling(billingEntries),
+      totals: summarizeOrganizationBilling(billingEntries),
       charts: Object.fromEntries(billingCurrencies.map((currency) => [currency, buildBillingChart(billingEntries, currency)])) as Record<BillingCurrency, BillingChartPoint[]>,
     },
     metrics: {
@@ -50,6 +52,8 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       users: organizations.reduce((sum, item) => sum + item.users, 0),
       activeUsers: organizations.reduce((sum, item) => sum + item.activeUsers, 0),
       newOrganizationsThisMonth: organizations.filter((item) => new Date(item.createdAt) >= monthStart).length,
+      activeLicenses: organizationRecords.filter(item => item.status === "active" && licenseState(item.license) === "active").length,
+      expiredLicenses: organizationRecords.filter(item => licenseState(item.license) === "expired").length,
     },
   };
 }

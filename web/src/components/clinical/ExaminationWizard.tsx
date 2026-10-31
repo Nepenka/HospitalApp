@@ -9,7 +9,11 @@ import { evaluateAnaphylaxis } from "@/domain/clinical/diagnosis";
 import { calculateSeverity } from "@/domain/clinical/severity";
 import { evaluateVitals } from "@/domain/clinical/vitals";
 import { resultSystems, systems, type TriState, type Vitals } from "@/domain/clinical/types";
-import type { StoredExamination } from "@/domain/examinations/types";
+import type { ExaminationInput, StoredExamination } from "@/domain/examinations/types";
+import type { SaveExaminationResult } from "@/app/examinations/actions";
+import { annotationErrorMessage, normalizeAnnotations, normalizeReactionTimeDraft, PHYSICIAN_COMMENT_MAX_LENGTH, reactionDateLabel } from "@/domain/examinations/annotations";
+import { DateRangePicker } from "@/app/history/date-range-picker";
+import type { ExaminationDraft, VitalsDraft } from "@/domain/examinations/draft";
 import { useTranslations } from "@/i18n/provider";
 import { clinicalSubgradeLabel, clinicalSystemLabel, conclusionLabel, diagnosticPresentation, optionLabel, severityReasonLabel, symptomLabel } from "@/i18n/clinical";
 
@@ -31,18 +35,6 @@ const initialVitals: Vitals = {
   heartRate: 80,
   respiratoryRate: 16,
   gcs: 15,
-};
-
-type VitalsDraft = {
-  ageYears: string;
-  ageMonths: string;
-  systolicBP: string;
-  diastolicBP: string;
-  baselineSystolicBP: string;
-  spO2: string;
-  heartRate: string;
-  respiratoryRate: string;
-  gcs: string;
 };
 
 function draftFromVitals(vitals: Vitals): VitalsDraft {
@@ -72,23 +64,36 @@ function vitalsFromDraft(draft: VitalsDraft): Vitals {
   };
 }
 
-export default function Home({ initialExamination }: { initialExamination?: StoredExamination }) {
+export default function Home({ initialExamination, initialDraft, onDraft, onPersist, onOpenSaved }: { initialExamination?: StoredExamination; initialDraft?: ExaminationDraft; onDraft?: (snapshot: ExaminationDraft) => Promise<void>; onPersist?: (input: ExaminationInput) => Promise<SaveExaminationResult>; onOpenSaved?: (id: string) => void }) {
   const { locale, t } = useTranslations();
   const editing = Boolean(initialExamination);
   const initialSelections = initialExamination?.selectedSymptoms.map(selectionFromStoredSymptom).filter((item) => item !== null) ?? [];
-  const [step, setStep] = useState<Step>("patient");
-  const [fullName, setFullName] = useState(initialExamination?.patient.fullName ?? "");
-  const [allergen, setAllergen] = useState(initialExamination?.probableAllergen ?? "");
-  const [allergenContact, setAllergenContact] = useState<TriState>(initialExamination?.allergenContact ?? "unknown");
-  const [acuteOnset, setAcuteOnset] = useState<TriState>(initialExamination?.acuteOnset ?? "unknown");
-  const [selectedIds, setSelectedIds] = useState<string[]>([...new Set(initialSelections.map((item) => item.id))]);
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => Object.fromEntries(initialSelections.filter((item) => item.optionId).map((item) => [item.id, item.optionId as string])));
-  const [vitalsDraft, setVitalsDraft] = useState<VitalsDraft>(() => draftFromVitals(initialExamination?.vitals ?? initialVitals));
+  const [step, setStep] = useState<Step>(initialDraft?.step ?? "patient");
+  const [fullName, setFullName] = useState(initialDraft?.fullName ?? initialExamination?.patient.fullName ?? "");
+  const [allergen, setAllergen] = useState(initialDraft?.allergen ?? initialExamination?.probableAllergen ?? "");
+  const [allergenContact, setAllergenContact] = useState<TriState>(initialDraft?.allergenContact ?? initialExamination?.allergenContact ?? "unknown");
+  const [acuteOnset, setAcuteOnset] = useState<TriState>(initialDraft?.acuteOnset ?? initialExamination?.acuteOnset ?? "unknown");
+  const [reactionDate, setReactionDate] = useState(initialDraft?.reactionDate ?? initialExamination?.reactionDate ?? "");
+  const [reactionTime, setReactionTime] = useState(initialDraft?.reactionTime ?? initialExamination?.reactionTime ?? "");
+  const [physicianComment, setPhysicianComment] = useState(initialDraft?.physicianComment ?? initialExamination?.physicianComment ?? "");
+  const [selectedIds, setSelectedIds] = useState<string[]>(initialDraft?.selectedIds ?? [...new Set(initialSelections.map((item) => item.id))]);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => initialDraft?.selectedOptions ?? Object.fromEntries(initialSelections.filter((item) => item.optionId).map((item) => [item.id, item.optionId as string])));
+  const [vitalsDraft, setVitalsDraft] = useState<VitalsDraft>(() => initialDraft?.vitalsDraft ?? draftFromVitals(initialExamination?.vitals ?? initialVitals));
   const [error, setError] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState("");
   const [isSaving, startSaving] = useTransition();
+  const [savedDraft, setSavedDraft] = useState<ExaminationDraft>();
+  const [failedDraft, setFailedDraft] = useState<ExaminationDraft>();
+  const snapshot = useMemo<ExaminationDraft>(() => ({ step, fullName, allergen, allergenContact, acuteOnset, reactionDate, reactionTime, physicianComment, selectedIds, selectedOptions, vitalsDraft }), [step, fullName, allergen, allergenContact, acuteOnset, reactionDate, reactionTime, physicianComment, selectedIds, selectedOptions, vitalsDraft]);
+  useEffect(() => {
+    if (!onDraft || savedId) return;
+    let active = true;
+    void onDraft(snapshot).then(() => { if (active) setSavedDraft(snapshot); }, () => { if (active) setFailedDraft(snapshot); });
+    return () => { active = false; };
+  }, [snapshot, onDraft, savedId]);
+  const draftStatus = savedDraft === snapshot ? "saved" : failedDraft === snapshot ? "error" : "saving";
 
   const selectedSymptoms = useMemo(
     () => selectedIds.map((id) => resolveSymptom(id, selectedOptions[id])).filter((symptom) => symptom !== null),
@@ -101,16 +106,22 @@ export default function Home({ initialExamination }: { initialExamination?: Stor
   const currentIndex = stepOrder.indexOf(step);
 
   useEffect(() => {
-    const dirty = !savedId && Boolean(fullName.trim() || allergen.trim() || selectedIds.length);
+    const dirty = !savedId && Boolean(fullName.trim() || allergen.trim() || selectedIds.length || reactionDate || reactionTime || physicianComment.trim());
     const protectDraft = (event: BeforeUnloadEvent) => { if (dirty) event.preventDefault(); };
     window.addEventListener("beforeunload", protectDraft);
     return () => window.removeEventListener("beforeunload", protectDraft);
-  }, [allergen, fullName, savedId, selectedIds.length]);
+  }, [allergen, fullName, savedId, selectedIds.length, reactionDate, reactionTime, physicianComment]);
 
   const setVitalDraft = (field: keyof VitalsDraft, value: string) => setVitalsDraft((current) => ({ ...current, [field]: value }));
 
   const moveNext = () => {
     setError("");
+    if (step === "patient") {
+      const time = normalizeReactionTimeDraft(reactionTime);
+      const annotations = normalizeAnnotations({ reactionDate, reactionTime: time });
+      if (!annotations.ok) { setError(annotationErrorMessage(annotations.error, locale)); return; }
+      setReactionTime(time);
+    }
     if (step === "patient" && fullName.trim().length < 3) {
       setError(t("Укажите ФИО пациента."));
       return;
@@ -148,6 +159,9 @@ export default function Home({ initialExamination }: { initialExamination?: Stor
     setAllergen("");
     setAllergenContact("unknown");
     setAcuteOnset("unknown");
+    setReactionDate("");
+    setReactionTime("");
+    setPhysicianComment("");
     setSelectedIds([]);
     setSelectedOptions({});
     setVitalsDraft(draftFromVitals(initialVitals));
@@ -160,22 +174,28 @@ export default function Home({ initialExamination }: { initialExamination?: Stor
   const persist = () => {
     setError("");
     setSaveMessage("");
+    const time = normalizeReactionTimeDraft(reactionTime);
+    const annotations = normalizeAnnotations({ reactionDate, reactionTime: time, physicianComment });
+    if (!annotations.ok) { setError(annotationErrorMessage(annotations.error, locale)); return; }
+    setReactionTime(time);
     if (!confirmed) {
       setError(t("Перед сохранением подтвердите, что проверили введённые данные."));
       return;
     }
-    if (!navigator.onLine) {
+    if (!navigator.onLine && !onPersist) {
       setError(t("Нет подключения к сети. Не закрывайте вкладку: сохранение станет доступно после восстановления связи."));
       return;
     }
     startSaving(async () => {
-      const examination = { fullName, probableAllergen: allergen, allergenContact, acuteOnset, selectedSymptoms: selectedIds.map((id) => ({ id, ...(selectedOptions[id] ? { optionId: selectedOptions[id] } : {}) })), vitals };
-      const response = initialExamination
+      try {
+      const examination = { fullName, probableAllergen: allergen, allergenContact, acuteOnset, reactionDate, reactionTime: time, physicianComment, selectedSymptoms: selectedIds.map((id) => ({ id, ...(selectedOptions[id] ? { optionId: selectedOptions[id] } : {}) })), vitals };
+      const response = onPersist ? await onPersist(examination) : initialExamination
         ? await updateExamination({ ...examination, examinationId: initialExamination.id, expectedVersion: initialExamination.rowVersion })
         : await saveExamination(examination);
       setSaveMessage(response.message);
       if (response.ok && response.examinationId) setSavedId(response.examinationId);
       else setError(response.message);
+      } catch { setError(locale === "en" ? "Saving failed. Your input remains in this tab; do not close it." : "Сохранение не удалось. Введённые данные остаются в этой вкладке; не закрывайте её."); }
     });
   };
 
@@ -190,9 +210,12 @@ export default function Home({ initialExamination }: { initialExamination?: Stor
         <span className={styles.draftBadge}>{t("Прототип")}</span>
       </header>
 
-      <nav className={styles.steps} aria-label={t("Этапы осмотра")}>
+      <nav aria-label={t("Этапы осмотра")}>
+        {/* Firefox otherwise restores stale disabled states before React hydrates. */}
+        <form className={styles.steps} autoComplete="off" data-examination-steps="true" onSubmit={(event) => event.preventDefault()}>
         {stepOrder.map((item, index) => (
           <button
+            type="button"
             className={`${styles.step} ${item === step ? styles.stepActive : ""} ${index < currentIndex ? styles.stepDone : ""}`}
             key={item}
             onClick={() => index < currentIndex && setStep(item)}
@@ -202,9 +225,11 @@ export default function Home({ initialExamination }: { initialExamination?: Stor
             {t(stepLabels[item])}
           </button>
         ))}
+        </form>
       </nav>
 
       <section className={styles.workspace}>
+        {onDraft && !savedId && <p role={draftStatus === "error" ? "alert" : "status"}>{draftStatus === "error" ? (locale === "en" ? "Draft could not be saved. Keep this tab open." : "Черновик не сохранён. Не закрывайте вкладку.") : draftStatus === "saved" ? (locale === "en" ? "Draft saved in the encrypted local vault." : "Черновик сохранён в зашифрованном локальном хранилище.") : (locale === "en" ? "Saving draft…" : "Сохранение черновика…")}</p>}
         {step === "patient" && (
           <div className={styles.panel}>
             <div className={styles.sectionHeading}>
@@ -239,6 +264,16 @@ export default function Home({ initialExamination }: { initialExamination?: Stor
                   <option value="no">{t("Нет")}</option>
                 </select>
                 <small>{t("Начало в течение минут–нескольких часов.")}</small>
+              </label>
+              <div className={styles.dateField}>
+                <DateRangePicker mode="single" value={reactionDate} label={t("Дата начала реакции")} locale={locale} disabled={Boolean(savedId) || isSaving} describedBy="reaction-date-hint" onChange={(value) => { setReactionDate(value); if (!value) setReactionTime(""); }} />
+                <small id="reaction-date-hint">{t("Необязательно. Оставьте пустым, если дата неизвестна.")}</small>
+              </div>
+              <label>
+                <span>{t("Время начала реакции")}</span>
+                <input type="text" value={reactionTime} placeholder="09:30" maxLength={5} autoComplete="off" spellCheck={false} disabled={Boolean(savedId) || isSaving} aria-describedby="reaction-time-format" onChange={(event) => setReactionTime(event.target.value)} onBlur={() => setReactionTime((value) => normalizeReactionTimeDraft(value))} />
+                <small id="reaction-time-format">{locale === "en" ? "Enter hh:mm or 0930. Select a date before saving the time." : "Введите чч:мм или 0930. Для сохранения времени выберите дату."}</small>
+                <small>{t("Необязательно, по времени Минска. Неизвестное время не заполняйте.")}</small>
               </label>
             </div>
           </div>
@@ -328,6 +363,12 @@ export default function Home({ initialExamination }: { initialExamination?: Stor
               </div>
               <div className={styles.reasonBox}><h3>{t("Что повлияло на результат")}</h3><ul>{result.reasons.map((reason, index) => <li key={`${reason}-${index}`}>{severityReasonLabel(locale, reason)}</li>)}</ul></div>
               <h3 className={styles.conclusion}>{conclusionLabel(locale, result, diagnosis.anyConfirmed)}</h3>
+              {reactionDate && <p className={styles.reactionSummary}>{t("Дата начала реакции")}: {reactionDateLabel(reactionDate, reactionTime, locale)}</p>}
+              <label className={styles.physicianComment}>
+                <span>{t("Комментарий/уточнение врача")}</span>
+                <textarea value={physicianComment} onChange={(event) => setPhysicianComment(event.target.value)} maxLength={PHYSICIAN_COMMENT_MAX_LENGTH} rows={4} disabled={Boolean(savedId) || isSaving} aria-describedby="physician-comment-help" />
+                <small id="physician-comment-help">{t("Необязательно. Не изменяет рассчитанное заключение.")} · {physicianComment.length}/{PHYSICIAN_COMMENT_MAX_LENGTH}</small>
+              </label>
               <div className={styles.diagnosisResultGrid}>{[diagnosis.primary, diagnosis.niaid, diagnosis.wao].map((source) => diagnosticPresentation(locale, source)).map((item) => <article key={item.key} data-status={item.status}><div><h3>{item.title}</h3><strong>{item.summary}</strong></div><ul>{item.criteria.map((criterion) => <li key={criterion.id} data-met={criterion.met}><b>{criterion.met ? "✓" : "—"}</b><span>{criterion.label}<small>{criterion.details}</small></span></li>)}</ul></article>)}</div>
               <div className={styles.emergencyNotice}><strong>{t("Клинически важно")}</strong><span>{t("Невыполнение критериев не исключает анафилаксию и не должно задерживать неотложную помощь.")}</span></div>
               <label className={styles.confirm}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} disabled={Boolean(savedId)} /> <span>{t("Я проверил(а) данные и подтверждаю результат осмотра")}</span></label>
@@ -339,10 +380,10 @@ export default function Home({ initialExamination }: { initialExamination?: Stor
         {error && <div className={styles.error} role="alert">{error}</div>}
         <div className={styles.actions}>
           {currentIndex > 0 && <button className={styles.secondaryButton} onClick={() => setStep(stepOrder[currentIndex - 1])}>{t("Назад")}</button>}
-          {step !== "result" ? <button className={styles.primaryButton} onClick={moveNext}>{t(step === "vitals" ? "Рассчитать результат" : "Продолжить")}<span>→</span></button> : savedId ? <><Link className={styles.secondaryActionLink} href={`/history/${savedId}`}>{t("Открыть запись")}</Link>{!editing && <button className={styles.primaryButton} onClick={reset}>{t("Новый осмотр")}</button>}</> : <button className={styles.primaryButton} onClick={persist} disabled={isSaving}>{t(isSaving ? "Сохранение…" : editing ? "Сохранить изменения" : "Сохранить осмотр")}</button>}
+          {step !== "result" ? <button className={styles.primaryButton} onClick={moveNext}>{t(step === "vitals" ? "Рассчитать результат" : "Продолжить")}<span>→</span></button> : savedId ? <>{onOpenSaved ? <button className={styles.secondaryButton} onClick={() => onOpenSaved(savedId)}>{t("Открыть запись")}</button> : <Link className={styles.secondaryActionLink} href={`/history/${savedId}`}>{t("Открыть запись")}</Link>}{!editing && <button className={styles.primaryButton} onClick={reset}>{t("Новый осмотр")}</button>}</> : <button className={styles.primaryButton} onClick={persist} disabled={isSaving}>{t(isSaving ? "Сохранение…" : editing ? "Сохранить изменения" : "Сохранить осмотр")}</button>}
         </div>
       </section>
-      <footer>{t("Алгоритм")}: anafix-web-2026.09.30 · {t("Осмотры сохраняются на сервере в зашифрованном виде")}</footer>
+      <footer>{t("Алгоритм")}: anafix-web-2026.09.30 · {onPersist ? (locale === "en" ? "Encrypted saving on this hospital computer; server sync is separate" : "Зашифрованное сохранение на компьютере больницы; отправка на сервер — отдельный этап") : t("Осмотры сохраняются на сервере в зашифрованном виде")}</footer>
     </main>
   );
 }

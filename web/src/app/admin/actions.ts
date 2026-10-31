@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/server/auth/session";
-import { createBillingEntry, createOrganizationWithOwner, resetAccountPassword, voidBillingEntry, type BillingCurrency, type BillingEntryType } from "@/server/identity/store";
+import { createBillingEntry, createOrganizationWithOwner, resetAccountPassword, setOrganizationRetention, voidBillingEntry, type BillingCurrency, type BillingEntryType } from "@/server/identity/store";
+import { validRetentionYears } from "@/domain/examinations/retention";
 import { auditSecurityEvent } from "@/server/security/audit";
 import { getLocale } from "@/i18n/server";
 
@@ -13,6 +14,24 @@ export interface AdminActionState {
 }
 
 export interface BillingActionState { error?: string; success?: string }
+export interface RetentionActionState { error?: string; success?: string }
+
+export async function updateRetentionAction(_state: RetentionActionState, formData: FormData): Promise<RetentionActionState> {
+  const session = await requireRole("platform_admin");
+  const m = await localizer();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const years = Number(formData.get("retentionYears"));
+  if (!organizationId || !validRetentionYears(years)) return { error: m("Укажите целое количество лет от 1 до 100.", "Enter a whole number of years between 1 and 100.") };
+  try {
+    await setOrganizationRetention(organizationId, years);
+    auditSecurityEvent("organization.retention_updated", { actorId: session.user.id, organizationId, outcome: "success", resourceId: organizationId });
+    revalidatePath(`/admin/organizations/${organizationId}`);
+    return { success: m("Политика хранения сохранена. Записи не удалены.", "Retention policy saved. No records were deleted.") };
+  } catch {
+    auditSecurityEvent("organization.retention_updated", { actorId: session.user.id, organizationId, outcome: "failure", resourceId: organizationId });
+    return { error: m("Не удалось сохранить политику хранения.", "Could not save the retention policy.") };
+  }
+}
 
 async function localizer() {
   const locale = await getLocale();
@@ -28,7 +47,7 @@ export async function createOrganizationAction(_state: AdminActionState, formDat
   if (ownerName.length < 3 || ownerName.length > 160) return { error: m("Укажите ФИО администратора организации.", "Enter the organization administrator's name.") };
   try {
     const created = await createOrganizationWithOwner(organizationName, ownerName);
-    auditSecurityEvent("organization.created", { actorId: session.user.id, outcome: "success", resourceId: created.organization.id });
+    auditSecurityEvent("organization.created", { actorId: session.user.id, organizationId: created.organization.id, outcome: "success", resourceId: created.organization.id });
     revalidatePath("/admin");
     return { success: m("Организация создана. Пароль больше не будет показан после закрытия этого блока.", "Organization created. The password will not be shown again after this panel is closed."), credentials: { login: created.credentials.login, password: created.credentials.password, organizationName: created.organization.name } };
   } catch (error) {
@@ -42,9 +61,9 @@ export async function resetOwnerPasswordAction(_state: AdminActionState, formDat
   const session = await requireRole("platform_admin");
   const accountId = String(formData.get("accountId") ?? "");
   const organizationName = String(formData.get("organizationName") ?? "");
-  const credentials = accountId ? await resetAccountPassword(accountId) : null;
+  const credentials = accountId ? await resetAccountPassword(accountId, undefined, "organization_owner") : null;
   if (!credentials) return { error: m("Учётная запись не найдена.", "Account not found.") };
-  auditSecurityEvent("account.password_reset", { actorId: session.user.id, outcome: "success", resourceId: accountId });
+  auditSecurityEvent("account.password_reset", { actorId: session.user.id, organizationId: credentials.organizationId, outcome: "success", resourceId: accountId });
   return { success: m("Старый пароль больше не действует. Сохраните новые реквизиты.", "The old password is no longer valid. Save the new credentials."), credentials: { login: credentials.login, password: credentials.password, organizationName } };
 }
 
@@ -81,7 +100,7 @@ export async function createBillingEntryAction(_state: BillingActionState, formD
   if (note.length > 200) return { error: m("Комментарий не должен превышать 200 символов.", "The comment must not exceed 200 characters.") };
   try {
     const entry = await createBillingEntry({ organizationId, type, currency, amountMinor, effectiveDate, note: note || null, createdBy: session.user.id });
-    auditSecurityEvent("billing.entry_created", { actorId: session.user.id, outcome: "success", resourceId: entry.id });
+    auditSecurityEvent("billing.entry_created", { actorId: session.user.id, organizationId, outcome: "success", resourceId: entry.id });
     revalidatePath("/admin");
     revalidatePath(`/admin/organizations/${organizationId}`);
     return { success: type === "charge" ? m("Начисление добавлено.", "Charge added.") : m("Оплата добавлена.", "Payment added.") };
@@ -96,12 +115,14 @@ export async function voidBillingEntryAction(_state: BillingActionState, formDat
   const session = await requireRole("platform_admin");
   const entryId = String(formData.get("entryId") ?? "");
   const organizationId = String(formData.get("organizationId") ?? "");
-  const entry = entryId ? await voidBillingEntry(entryId, organizationId, session.user.id) : null;
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (reason.length < 3 || reason.length > 200) return { error: m("Укажите причину аннулирования от 3 до 200 символов.", "Enter a void reason between 3 and 200 characters.") };
+  const entry = entryId ? await voidBillingEntry(entryId, organizationId, session.user.id, reason) : null;
   if (!entry) {
     auditSecurityEvent("billing.entry_voided", { actorId: session.user.id, outcome: "failure", resourceId: entryId });
     return { error: m("Операция не найдена или уже аннулирована.", "Transaction not found or already voided.") };
   }
-  auditSecurityEvent("billing.entry_voided", { actorId: session.user.id, outcome: "success", resourceId: entryId });
+  auditSecurityEvent("billing.entry_voided", { actorId: session.user.id, organizationId, outcome: "success", resourceId: entryId });
   revalidatePath("/admin");
   revalidatePath(`/admin/organizations/${organizationId}`);
   return { success: m("Операция аннулирована и исключена из расчётов.", "Transaction voided and excluded from calculations.") };

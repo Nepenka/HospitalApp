@@ -5,9 +5,11 @@ import { LoginForm } from "./login-form";
 import styles from "./login.module.css";
 import { getLocale } from "@/i18n/server";
 import { translate } from "@/i18n/config";
+import {requiresMfa} from "@/server/auth/mfa";
 export default async function LoginPage() {
   const locale = await getLocale();
-  const session = await readSession();
+  const session = await readSession(true);
+  if(session && requiresMfa(session.user.role) && !session.mfaVerifiedAt)redirect("/mfa");
   if (session) redirect(session.user.mustChangePassword ? "/change-password" : landingPath(session.user));
   return <main className={styles.page}><section className={styles.card}>
     <div className={styles.brand}><span>АФ</span><div><p>{translate(locale, "Защищённый доступ")}</p><h1>АнаФикс</h1></div></div>

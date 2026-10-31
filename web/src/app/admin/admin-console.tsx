@@ -16,6 +16,8 @@ export function AdminConsole({ data }: { data: AdminDashboardData }) {
       <Metric label={e ? "Accounts" : "Учётные записи"} value={String(data.metrics.users)} note={e ? "Owners and clinicians" : "Владельцы и врачи"} />
       <Metric label={e ? "Active accounts" : "Активные учётные записи"} value={String(data.metrics.activeUsers)} note={e ? "Access is enabled" : "Доступ не приостановлен"} />
       <Metric label={e ? "New this month" : "Новые за месяц"} value={String(data.metrics.newOrganizationsThisMonth)} note={e ? "Since the beginning of the month" : "С начала текущего месяца"} />
+      <Metric label={e ? "Active licenses" : "Активные лицензии"} value={String(data.metrics.activeLicenses)} note={e ? "Configured validity and enabled organization" : "Срок задан, доступ организации разрешён"} />
+      <Metric label={e ? "Expired licenses" : "Истекшие лицензии"} value={String(data.metrics.expiredLicenses)} note={e ? "Requires renewal" : "Требуют продления"} />
     </section>
 
     <section className={styles.grid} aria-label={e ? "Organization growth and finances" : "Динамика подключений и финансы"}>

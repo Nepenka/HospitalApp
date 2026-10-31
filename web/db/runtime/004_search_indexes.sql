@@ -1,0 +1,13 @@
+CREATE TABLE anafix.search_token(scope text NOT NULL,organization_id text NOT NULL,resource_id text NOT NULL,token text NOT NULL,PRIMARY KEY(scope,organization_id,resource_id,token));
+CREATE INDEX search_token_lookup_idx ON anafix.search_token(scope,organization_id,token,resource_id);
+ALTER TABLE anafix.identity_record ADD COLUMN status text;
+ALTER TABLE anafix.identity_record ADD COLUMN role text;
+ALTER TABLE anafix.identity_record ADD COLUMN created_at timestamptz;
+ALTER TABLE anafix.identity_record ADD COLUMN last_login_at timestamptz;
+ALTER TABLE anafix.identity_record ADD COLUMN license_from date;
+ALTER TABLE anafix.identity_record ADD COLUMN license_to date;
+ALTER TABLE anafix.identity_record ADD COLUMN archived_at timestamptz;
+CREATE INDEX identity_list_idx ON anafix.identity_record(kind,created_at DESC,id);
+CREATE INDEX identity_tenant_list_idx ON anafix.identity_record(kind,organization_id,created_at DESC,id);
+CREATE TABLE anafix.index_state(name text PRIMARY KEY,ready boolean NOT NULL DEFAULT false);
+INSERT INTO anafix.index_state(name) VALUES('search-v1');

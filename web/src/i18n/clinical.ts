@@ -12,11 +12,12 @@ const symptomEn: Record<string, string> = {
   "resp-inhale":"Difficulty breathing in", "resp-exhale":"Difficulty breathing out", "resp-tightness":"Chest tightness", "resp-throat":"Throat irritation or discomfort", "resp-dysphonia":"Dysphonia", "resp-barking":"Barking cough", "resp-dyspnea":"Dyspnea", "resp-cough":"Cough", "resp-stridor":"Stridor", "resp-wheeze":"Wheezing", "resp-grunting":"Grunting", "resp-work":"Use of accessory respiratory muscles", "resp-flaring":"Nasal flaring", "resp-spo2":"SaO₂ < 92%", "resp-failure":"Respiratory failure requiring O₂",
 };
 const optionEn: Record<string, string> = {
+  "Периодически (<50% ППТ)":"Intermittently (<50% BSA)",
   "Локализованная (<50% ППТ)":"Localized (<50% BSA)", "Генерализованная (≥50% ППТ)":"Generalized (≥50% BSA)", "Периодический (<50% ППТ)":"Intermittent (<50% BSA)", "Локализованный (<50% ППТ)":"Localized (<50% BSA)", "Постоянный":"Persistent", "Генерализованный (≥50% ППТ)":"Generalized (≥50% BSA)",
   "Анатомические ориентиры сохранены":"Anatomical landmarks preserved", "Анатомические ориентиры сглажены":"Anatomical landmarks obscured", "Анатомические ориентиры не видны":"Anatomical landmarks not visible", "Эпизодичная":"Episodic", "Постоянная":"Persistent", "1–2 раза":"1–2 episodes", "Более 2-х раз":"More than 2 episodes", "Постоянная, сильная":"Persistent, severe", "Без ПРД":"Without increased work of breathing", "С ПРД":"With increased work of breathing", "«Немое лёгкое»":"Silent chest", "Вновь появившийся":"New onset", "Персистирующий":"Persistent", "Не требуется введение вазопрессоров":"No vasopressors required", "Требуется введение вазопрессоров":"Vasopressors required", "Любой вариант гипотензии у младенца":"Any hypotension in an infant",
 };
 const criterionEn: Record<string, string> = {
-  "grade-4":"OAR grade 4–5", "grade-3-multisystem":"Grade 3 involving at least 2 systems", "isolated-hypotension":"Isolated hypotension", "respiratory":"Moderate or severe respiratory involvement",
+  "grade-4":"Acute allergic reaction, grade 4–5", "grade-3-multisystem":"Grade 3 involving at least 2 systems", "isolated-hypotension":"Isolated hypotension", "respiratory":"Moderate or severe respiratory involvement",
   "niaid-1":"1. Acute onset + skin/mucosa + respiratory compromise or reduced BP/end-organ dysfunction", "niaid-2":"2. Likely allergen exposure + at least 2 clinical categories", "niaid-3":"3. Reduced BP after exposure to a known allergen",
   "wao-1":"1. Acute onset + skin/mucosa + respiratory compromise, reduced BP/end-organ dysfunction or severe GI symptoms", "wao-2":"2. Acute hypotension, bronchospasm or laryngeal involvement after likely allergen exposure",
 };

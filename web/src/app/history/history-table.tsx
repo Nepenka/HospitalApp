@@ -3,12 +3,12 @@ import type { ExaminationHistoryPage } from "@/server/examinations/repository";
 import styles from "./history.module.css";
 import { translate, type Locale } from "@/i18n/config";
 import { DateRangePicker } from "./date-range-picker";
+import {searchHistoryAction,resetHistoryAction} from "./search-actions";
 
 type Filters = { search: string; diagnosis: "all" | "anaphylaxis" | "other"; from: string; to: string };
 
 function pageHref(filters: Filters, page: number): string {
   const params = new URLSearchParams();
-  if (filters.search) params.set("q", filters.search);
   if (filters.diagnosis !== "all") params.set("diagnosis", filters.diagnosis);
   if (filters.from) params.set("from", filters.from);
   if (filters.to) params.set("to", filters.to);
@@ -20,12 +20,12 @@ export function HistoryTable({ history, filters, locale, today }: { history: Exa
   const t = (text: string) => translate(locale, text);
   const hasFilters = Boolean(filters.search || filters.from || filters.to || filters.diagnosis !== "all");
   return <section className={styles.card}>
-    <form className={styles.toolbar} action="/history" method="get">
+    <form className={styles.toolbar} action={searchHistoryAction}>
       <label><span>{t("Поиск")}</span><input name="q" defaultValue={filters.search} maxLength={200} placeholder={t("Поиск по ФИО или аллергену")} /></label>
       <label><span>{t("Результат")}</span><select name="diagnosis" defaultValue={filters.diagnosis}><option value="all">{t("Все результаты")}</option><option value="anaphylaxis">{t("Анафилаксия подтверждена")}</option><option value="other">{t("Не подтверждена")}</option></select></label>
       <DateRangePicker initialFrom={filters.from} initialTo={filters.to} locale={locale} today={today} />
       <button className={styles.filterButton} type="submit"><span>{t("Найти")}</span></button>
-      {hasFilters && <Link className={styles.clearLink} href="/history">{t("Сбросить")}</Link>}
+      {hasFilters && <button type="submit" formAction={resetHistoryAction} className={styles.clearLink}>{t("Сбросить")}</button>}
     </form>
     <p className={styles.count}>{t("Найдено записей")}: {history.total}. {t("Даты указаны по времени Минска.")}</p>
     {history.items.length === 0 ? <div className={styles.empty}><strong>{t(hasFilters ? "Ничего не найдено" : "История пока пуста")}</strong><span>{t(hasFilters ? "Измените условия поиска." : "Завершите и сохраните первый осмотр.")}</span></div> : <div className={styles.tableWrap}>

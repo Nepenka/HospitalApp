@@ -10,7 +10,7 @@
 .card > p, .credentials > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .card form { margin-top: 18px; display: grid; gap: 11px; }
 .card label { display: grid; gap: 7px; font-size: 12px; font-weight: 700; }
-.card input { min-height: 48px; padding: 0 13px; border: 1px solid #cbd6d2; border-radius: 11px; }
+.card input:not([type="checkbox"]):not([type="hidden"]) { min-height: 48px; padding: 0 13px; border: 1px solid #cbd6d2; border-radius: 11px; }
 .card form > button { min-height: 48px; border: 0; border-radius: 11px; color: white; background: var(--teal); font-weight: 750; }
 .error { padding: 10px; border-radius: 9px; color: #922f27; background: #fff0ee; font-size: 11px; }
 .credentials { border-style: dashed; background: #f9fbfa; }

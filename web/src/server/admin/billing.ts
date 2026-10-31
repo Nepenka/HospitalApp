@@ -45,3 +45,11 @@ export function buildBillingChart(entries: BillingEntryRecord[], currency: Billi
     };
   });
 }
+
+/** One hospital's advance must not cancel another hospital's debt. */
+export function summarizeOrganizationBilling(entries: BillingEntryRecord[], now = new Date()): Record<BillingCurrency, CurrencyFinancialSummary> {
+  const groups = [...new Set(entries.map(entry => entry.organizationId))].map(id => summarizeBilling(entries.filter(entry => entry.organizationId === id), now));
+  const total = summarizeBilling([], now);
+  for (const group of groups) for (const currency of billingCurrencies) for (const field of ["charged", "received", "debt", "advance", "scheduled"] as const) total[currency][field] += group[currency][field];
+  return total;
+}

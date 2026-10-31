@@ -1,5 +1,10 @@
 .datePicker { position: relative; min-width: 0; display: grid; grid-template-rows: 18px 46px; gap: 7px; }
 .datePickerLabel { color: var(--muted); font-size: 11px; font-weight: 750; line-height: 18px; letter-spacing: .15px; }
+.datePicker[data-appearance="form"] { display: flex; flex-direction: column; gap: 8px; grid-column: auto; }
+.datePicker[data-appearance="form"] .datePickerLabel { color: var(--ink); font-size: 13px; letter-spacing: normal; }
+.datePicker[data-appearance="form"] .dateTrigger { height: 48px; border-radius: 11px; }
+.dateTrigger:disabled { cursor: default; color: var(--muted); background: var(--surface-soft); }
+.dateTrigger:focus-visible, .calendarPopover button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 .dateTrigger { appearance: none; width: 100%; height: 46px; margin: 0; padding: 0 13px; border: 1px solid #cbd9d4; border-radius: 12px; display: grid; grid-template-columns: 18px minmax(0, 1fr) 16px; align-items: center; gap: 10px; color: var(--ink); background: #fff; font: inherit; text-align: left; transition: border-color .15s ease, box-shadow .15s ease; }
 .dateTrigger:hover { border-color: #9eb8b0; }
 .dateTrigger[aria-expanded="true"] { border-color: var(--teal); box-shadow: 0 0 0 4px rgba(7,134,110,.1); }
@@ -25,7 +30,7 @@
 .days button:hover { color: var(--teal-dark); background: var(--teal-soft); }
 .days button[data-range="true"] { border-radius: 0; color: var(--teal-dark); background: #dff2ed; }
 .days button[data-edge="true"] { z-index: 1; border-radius: 10px; color: #fff; background: var(--teal); box-shadow: 0 5px 12px rgba(7,134,110,.2); }
-.calendarFooter { margin-top: 14px; padding-top: 14px; border-top: 1px solid #e8efec; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.calendarPopover .calendarFooter { max-width: none; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid #e8efec; display: flex; align-items: center; justify-content: space-between; gap: 16px; text-align: left; }
 .calendarFooter span { color: var(--muted); font-size: 11px; }
 .calendarFooter button { appearance: none; min-height: 36px; padding: 0 15px; border: 0; border-radius: 10px; color: #fff; background: var(--teal); font: inherit; font-size: 12px; font-weight: 780; }
 .calendarFooter button:disabled { cursor: default; opacity: .45; }

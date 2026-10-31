@@ -22,6 +22,7 @@
 .selectedCounter span { font-size: 11px; }
 .formGrid { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
 .fieldWide { grid-column: 1 / -1; }
+.dateField { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .formGrid label, .ageRow label { display: flex; flex-direction: column; gap: 8px; }
 .formGrid label > span, .ageRow label > span, .vitalField > span { font-size: 13px; font-weight: 750; }
 .formGrid b { color: #b33c32; }
@@ -79,6 +80,13 @@
 .confirm { display: flex; align-items: start; gap: 10px; margin-top: 18px; font-size: 13px; font-weight: 650; }
 .confirm input { width: 18px; height: 18px; accent-color: var(--teal); }
 .conclusion { margin: 20px 0 13px; font-size: 18px; line-height: 1.4; }
+.reactionSummary { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.physicianComment { display: grid; gap: 8px; margin: 18px 0 24px; }
+.physicianComment > span { font-size: 13px; font-weight: 750; }
+.physicianComment textarea { width: 100%; min-height: 112px; padding: 13px; border: 1px solid #cbd6d2; border-radius: 11px; background: white; color: var(--ink); font: inherit; line-height: 1.5; resize: vertical; }
+.physicianComment textarea:focus-visible { outline: 2px solid var(--accent, #087f68); outline-offset: 2px; }
+.physicianComment small { color: var(--muted); line-height: 1.4; }
+.physicianComment textarea:disabled { background: #f4f8f6; }
 .diagnosisResultGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
 .diagnosisResultGrid article { border: 1px solid #dbe4e1; border-radius: 12px; overflow: hidden; min-width: 0; }
 .diagnosisResultGrid article > div { padding: 11px; background: #f5f8f7; }

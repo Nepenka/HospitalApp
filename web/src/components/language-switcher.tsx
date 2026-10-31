@@ -1,8 +1,10 @@
 import { getLocale } from "@/i18n/server";
 import { setLocaleAction } from "@/app/language-actions";
 import styles from "./language-switcher.module.css";
+import { headers } from "next/headers";
 
 export async function LanguageSwitcher() {
+  if ((await headers()).get("x-anafix-pathname") === "/offline") return null;
   const locale = await getLocale();
   return <div className={styles.switcher} role="group" aria-label={locale === "ru" ? "Язык интерфейса" : "Interface language"}>
     <form action={setLocaleAction}><input type="hidden" name="locale" value="ru" /><button type="submit" data-active={locale === "ru"} aria-pressed={locale === "ru"}>RU</button></form>

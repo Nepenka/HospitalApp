@@ -1,0 +1,42 @@
+.tabs { display: flex; gap: 7px; overflow-x: auto; margin: 0 0 22px; padding: 6px; border: 1px solid var(--line); border-radius: 14px; background: white; }
+.tabs a { flex-shrink: 0; padding: 11px 16px; border-radius: 10px; color: var(--muted); font-size: 13px; font-weight: 700; text-decoration: none; }
+.tabs a[aria-current="page"] { color: var(--teal-dark); background: var(--teal-soft); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.card { padding: 23px; margin-bottom: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-card); min-width: 0; }
+.card h2 { margin: 0 0 12px; font-size: 19px; }
+.card h3 { margin: 0 0 9px; font-size: 15px; }
+.card p { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.metric { display: block; font-size: 28px; letter-spacing: -.7px; }
+.card dl { display: grid; gap: 13px; margin: 16px 0 0; }
+.card dl > div { display: flex; justify-content: space-between; gap: 18px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.card dt { color: var(--muted); font-size: 12px; }
+.card dd { margin: 0; font-size: 13px; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.form { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; margin-top: 18px; }
+.form label { display: grid; gap: 7px; font-size: 12px; font-weight: 700; }
+.form input:not([type="checkbox"]), .form select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--ink); }
+.wide { grid-column: 1 / -1; }
+.check { display: flex !important; align-items: start; gap: 9px !important; line-height: 1.6; font-size: 12px; }
+.check input { margin-top: 3px; accent-color: var(--teal); }
+.primary { min-height: 42px; border: 0; padding: 11px 16px; border-radius: 10px; color: white; background: var(--teal); font-weight: 750; }
+.primary:disabled { opacity: .55; cursor: wait; }
+.error, .success, .notice { border-radius: 10px; padding: 12px 14px; font-size: 12px; line-height: 1.6; }
+.error { color: var(--danger); background: #fff0ee; }
+.success { color: var(--teal-dark); background: var(--teal-soft); }
+.notice { margin: 0 0 20px; color: #48665c; background: var(--teal-soft); border: 1px solid #cce7dd; }
+.table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.scroll { overflow-x: auto; }
+.table th { padding: 12px; color: var(--muted); font-size: 10px; letter-spacing: .4px; background: var(--surface-soft); text-align: left; }
+.table td { padding: 13px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.table td small { display: block; margin-top: 4px; color: var(--muted); }
+.table a { color: var(--teal-dark); font-weight: 700; }
+.empty { padding: 28px 12px; color: var(--muted); text-align: center; font-size: 13px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.control { max-width: 290px; }
+.control summary { cursor: pointer; color: var(--teal-dark); padding: 8px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-soft); list-style-position: inside; font-size: 11px; font-weight: 750; }
+.control .form { grid-template-columns: 1fr; min-width: 200px; gap: 10px; margin: 12px 0; }
+.search { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.search input { min-height: 40px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; width: min(100%,320px); }
+.badge { display: inline-block; padding: 5px 9px; border-radius: 9px; background: var(--teal-soft); color: var(--teal-dark); font-size: 11px; font-weight: 750; }
+.badge[data-warning="true"] { background: #fff2df; color: #805914; }
+.pageLink { padding: 9px 13px; border: 1px solid var(--line); border-radius: 10px; color: var(--teal-dark); text-decoration: none; font-weight: 700; font-size: 12px; }
+@media (max-width: 640px) { .form { grid-template-columns: 1fr; } .card { padding: 18px; } .tabs a { padding: 10px 12px; } }

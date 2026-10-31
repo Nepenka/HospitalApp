@@ -1,64 +1,86 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Locale } from "@/i18n/config";
 import styles from "./date-range-picker.module.css";
 
-type Props = { initialFrom: string; initialTo: string; locale: Locale; today: string };
+type Props = { locale: Locale } & (
+  | { mode?: "range"; initialFrom: string; initialTo: string; today: string }
+  | { mode: "single"; value: string; onChange: (value: string) => void; label: string; disabled?: boolean; describedBy?: string; today?: string }
+);
 
 const dateFromKey = (value: string) => new Date(`${value}T00:00:00.000Z`);
 const keyFromDate = (value: Date) => value.toISOString().slice(0, 10);
 const monthStart = (value: Date) => new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), 1));
 const addMonths = (value: Date, amount: number) => new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth() + amount, 1));
 
-export function DateRangePicker({ initialFrom, initialTo, locale, today }: Props) {
+export function DateRangePicker(props: Props) {
+  const { locale } = props;
+  const today = props.today ?? "2000-01-01";
+  const single = props.mode === "single";
+  const initialFrom = single ? props.value : props.initialFrom;
+  const initialTo = single ? "" : props.initialTo;
+  const disabled = single && Boolean(props.disabled);
   const e = locale === "en";
+  const labelId = useId();
+  const dialogId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [from, setFrom] = useState(initialFrom);
+  const [rangeFrom, setFrom] = useState(initialFrom);
+  const from = single ? props.value : rangeFrom;
   const [to, setTo] = useState(initialTo);
   const [month, setMonth] = useState(() => monthStart(dateFromKey(initialFrom || initialTo || today)));
   const formatter = useMemo(() => new Intl.DateTimeFormat(e ? "en-GB" : "ru-RU", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }), [e]);
-  const triggerText = from && to ? `${formatter.format(dateFromKey(from))} — ${formatter.format(dateFromKey(to))}` : from ? `${e ? "From" : "С"} ${formatter.format(dateFromKey(from))}` : e ? "Select a date range" : "Выберите период";
+  const triggerText = single ? (from ? formatter.format(dateFromKey(from)) : e ? "Select a date" : "Выберите дату") : from && to ? `${formatter.format(dateFromKey(from))} — ${formatter.format(dateFromKey(to))}` : from ? `${e ? "From" : "С"} ${formatter.format(dateFromKey(from))}` : e ? "Select a date range" : "Выберите период";
 
   useEffect(() => {
     if (!open) return;
     const close = (event: PointerEvent) => { if (!rootRef.current?.contains(event.target as Node)) setOpen(false); };
-    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setOpen(false); triggerRef.current?.focus(); } };
     document.addEventListener("pointerdown", close);
     document.addEventListener("keydown", escape);
     return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
   }, [open]);
 
   const choose = (day: string) => {
+    if (single) { props.onChange(day); return; }
     if (!from || to) { setFrom(day); setTo(""); return; }
     if (day < from) { setTo(from); setFrom(day); return; }
     setTo(day);
   };
+  const toggle = () => {
+    if (!open && single) {
+      // Read the device clock only on interaction, never during SSR/hydration.
+      const parts = new Intl.DateTimeFormat("en", { timeZone: "Europe/Minsk", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+      const date = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+      setMonth(monthStart(dateFromKey(from || props.today || `${date.year}-${date.month}-${date.day}`)));
+    }
+    setOpen((value) => !value);
+  };
 
-  return <div className={styles.datePicker} ref={rootRef}>
-    <span className={styles.datePickerLabel}>{e ? "Period" : "Период"}</span>
-    <input type="hidden" name="from" value={from} />
-    <input type="hidden" name="to" value={to} />
-    <button className={styles.dateTrigger} type="button" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+  return <div className={styles.datePicker} data-appearance={single ? "form" : "filter"} ref={rootRef}>
+    <span className={styles.datePickerLabel} id={labelId}>{single ? props.label : e ? "Period" : "Период"}</span>
+    {!single && <><input type="hidden" name="from" value={from} /><input type="hidden" name="to" value={to} /></>}
+    <button className={styles.dateTrigger} ref={triggerRef} type="button" disabled={disabled} aria-labelledby={labelId} aria-describedby={single ? props.describedBy : undefined} aria-haspopup="dialog" aria-controls={open && !disabled ? dialogId : undefined} aria-expanded={open && !disabled} onClick={toggle}>
       <CalendarIcon /><span>{triggerText}</span><ChevronIcon open={open} />
     </button>
-    {open && <div className={styles.calendarPopover} role="dialog" aria-label={e ? "Select a date range" : "Выбор периода"}>
+    {open && !disabled && <div className={styles.calendarPopover} id={dialogId} role="dialog" aria-label={single ? props.label : e ? "Select a date range" : "Выбор периода"}>
       <header className={styles.calendarHeader}>
-        <div><strong>{e ? "Date range" : "Период осмотров"}</strong><span>{from ? triggerText : e ? "Choose the first and last day" : "Выберите первый и последний день"}</span></div>
-        {(from || to) && <button type="button" onClick={() => { setFrom(""); setTo(""); }}>{e ? "Clear" : "Сбросить"}</button>}
+        <div><strong>{single ? props.label : e ? "Date range" : "Период осмотров"}</strong><span>{from ? triggerText : single ? (e ? "Choose the reaction onset day" : "Выберите день начала реакции") : e ? "Choose the first and last day" : "Выберите первый и последний день"}</span></div>
+        {(from || to) && <button type="button" onClick={() => { if (single) props.onChange(""); else { setFrom(""); setTo(""); } }}>{e ? "Clear" : "Сбросить"}</button>}
       </header>
       <div className={styles.calendarNavigation}>
         <button type="button" aria-label={e ? "Previous month" : "Предыдущий месяц"} onClick={() => setMonth((value) => addMonths(value, -1))}>‹</button>
         <button type="button" aria-label={e ? "Next month" : "Следующий месяц"} onClick={() => setMonth((value) => addMonths(value, 1))}>›</button>
       </div>
       <div className={styles.calendars}>
-        <CalendarMonth month={month} from={from} to={to} locale={locale} choose={choose} />
-        <CalendarMonth month={addMonths(month, 1)} from={from} to={to} locale={locale} choose={choose} secondary />
+        <CalendarMonth month={month} from={from} to={single ? "" : to} locale={locale} choose={choose} />
+        <CalendarMonth month={addMonths(month, 1)} from={from} to={single ? "" : to} locale={locale} choose={choose} secondary />
       </div>
       <footer className={styles.calendarFooter}>
-        <span>{!from ? (e ? "Select a start date" : "Выберите начальную дату") : !to ? (e ? "Now select an end date" : "Теперь выберите конечную дату") : (e ? "Range selected" : "Период выбран")}</span>
-        <button type="button" disabled={!from} onClick={() => setOpen(false)}>{e ? "Done" : "Готово"}</button>
+        <span>{single ? (from ? (e ? "Date selected" : "Дата выбрана") : (e ? "Select a date" : "Выберите дату")) : !from ? (e ? "Select a start date" : "Выберите начальную дату") : !to ? (e ? "Now select an end date" : "Теперь выберите конечную дату") : (e ? "Range selected" : "Период выбран")}</span>
+        <button type="button" disabled={!from} onClick={() => { setOpen(false); triggerRef.current?.focus(); }}>{e ? "Done" : "Готово"}</button>
       </footer>
     </div>}
   </div>;
@@ -81,7 +103,7 @@ function CalendarMonth({ month, from, to, locale, choose, secondary = false }: {
       const key = keyFromDate(date);
       const edge = key === from || key === to;
       const inRange = Boolean(from && to && key > from && key < to);
-      return <button type="button" key={key} data-edge={edge} data-range={inRange} aria-pressed={edge || inRange} onClick={() => choose(key)}>{date.getUTCDate()}</button>;
+      return <button type="button" key={key} data-edge={edge} data-range={inRange} aria-label={new Intl.DateTimeFormat(e ? "en-GB" : "ru-RU", { dateStyle: "full", timeZone: "UTC" }).format(date)} aria-pressed={edge || inRange} onClick={() => choose(key)}>{date.getUTCDate()}</button>;
     })}</div>
   </section>;
 }

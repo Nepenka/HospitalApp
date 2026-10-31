@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import PDFDocument from "pdfkit";
 import type { StoredExamination } from "@/domain/examinations/types";
+import { reactionDateLabel } from "@/domain/examinations/annotations";
 import { resultSystems } from "@/domain/clinical/types";
 import type { Locale } from "@/i18n/config";
 import { clinicalSystemLabel, conclusionLabel, diagnosticPresentation, optionLabel, symptomLabel } from "@/i18n/clinical";
@@ -31,11 +32,17 @@ export async function createExaminationPdf(examination: StoredExamination, local
   addHeading(e ? "Final assessment" : "Итоговое заключение");
   addLine(conclusionLabel(locale, examination.severity, examination.conclusion.anyConfirmed));
   addLine(`${e ? "Severity grade" : "Степень тяжести"}: ${examination.severity.grade}`);
+  if (examination.physicianComment) {
+    addHeading(e ? "Physician comment / clarification" : "Комментарий/уточнение врача");
+    addLine(examination.physicianComment);
+    addLine(e ? "Separate physician note; does not change the calculated conclusion." : "Отдельное уточнение врача; не изменяет рассчитанное заключение.");
+  }
 
   addHeading(e ? "Source data" : "Исходные данные");
   addLine(`${e ? "Probable allergen" : "Вероятный аллерген"}: ${examination.probableAllergen ?? (e ? "Not specified" : "Не указан")}`);
   addLine(`${e ? "Allergen exposure" : "Контакт с аллергеном"}: ${triStateLabel[examination.allergenContact]}`);
   addLine(`${e ? "Acute onset" : "Острое начало"}: ${triStateLabel[examination.acuteOnset]}`);
+  addLine(`${e ? "Reaction onset date" : "Дата начала реакции"}: ${reactionDateLabel(examination.reactionDate, examination.reactionTime, locale)}`);
 
   addHeading(e ? "Diagnostic criteria" : "Диагностические критерии");
   for (const sourceCheck of [examination.conclusion.primary, examination.conclusion.niaid, examination.conclusion.wao]) {

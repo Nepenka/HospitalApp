@@ -1,21 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { AdminDashboardData, OrganizationAdminRow } from "@/server/admin/organizations";
+import type { OrganizationAdminRow } from "@/server/admin/organizations";
+import type {OrganizationListData} from "@/server/admin/organization-list";
 import { createOrganizationAction, resetOwnerPasswordAction, type AdminActionState } from "../actions";
 import styles from "../admin.module.css";
 import { useTranslations } from "@/i18n/provider";
 
 const initialState: AdminActionState = {};
 
-export function OrganizationManagement({ data }: { data: AdminDashboardData }) {
+export function OrganizationManagement({ data }: { data: OrganizationListData }) {
   const { locale } = useTranslations(); const e = locale === "en";
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const query=data.query;
   const [createState, createAction, creating] = useActionState(createOrganizationAction, initialState);
-  const filtered = useMemo(() => data.organizations.filter((organization) => `${organization.name} ${organization.code} ${organization.ownerLogin}`.toLocaleLowerCase("ru-RU").includes(query.trim().toLocaleLowerCase("ru-RU"))), [data.organizations, query]);
+  const filtered=data.organizations;
   useEffect(() => { if (createState.credentials) router.refresh(); }, [createState.credentials, router]);
 
   return <div className={styles.content}>
@@ -40,9 +41,9 @@ export function OrganizationManagement({ data }: { data: AdminDashboardData }) {
     </section>
 
     <section className={styles.tableCard}>
-      <div className={styles.tableHeader}><div><p>{e?"Management":"Управление"}</p><h2>{e?"All organizations":"Все организации"}</h2></div><div className={styles.filters}><label><span className={styles.srOnly}>{e?"Search":"Поиск"}</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={e?"Name, code or login":"Название, код или логин"} /></label>{query && <button className={styles.clearFilter} type="button" onClick={() => setQuery("")}>{e?"Clear":"Очистить"}</button>}</div></div>
-      {filtered.length ? <div className={styles.tableScroll}><table><thead><tr><th>{e?"Organization":"Организация"}</th><th>{e?"Owner login":"Логин владельца"}</th><th>{e?"Users":"Пользователи"}</th><th>{e?"Outstanding":"Задолженность"}</th><th>{e?"Status":"Статус"}</th><th>{e?"Last sign-in":"Последний вход"}</th><th>{e?"Access":"Доступ"}</th></tr></thead><tbody>{filtered.map((organization) => <OrganizationRow organization={organization} key={organization.id} />)}</tbody></table></div> : <div className={styles.emptyState}><strong>{data.organizations.length ? (e?"No organizations found":"Организации не найдены") : (e?"No organizations yet":"Организаций пока нет")}</strong><span>{data.organizations.length ? (e?"Clear the search or change the query.":"Очистите поиск или измените запрос.") : (e?"Create the first organization using the form above.":"Создайте первую организацию в форме выше.")}</span>{query && <button className={styles.clearEmpty} type="button" onClick={() => setQuery("")}>{e?"Clear search":"Очистить поиск"}</button>}</div>}
-      <footer><span>{e?"Showing":"Показано"} {filtered.length} {e?"of":"из"} {data.organizations.length}</span></footer>
+      <div className={styles.tableHeader}><div><p>{e?"Management":"Управление"}</p><h2>{e?"All organizations":"Все организации"}</h2></div><form className={styles.filters} action="/admin/organizations"><label><span className={styles.srOnly}>{e?"Search":"Поиск"}</span><input name="q" defaultValue={query} maxLength={200} placeholder={e?"Name, code or login":"Название, код или логин"} /></label><button className={styles.searchButton}>{e?"Find":"Найти"}</button>{query&&<Link href="/admin/organizations">{e?"Clear":"Сбросить"}</Link>}</form></div>
+      {filtered.length ? <div className={styles.tableScroll}><table><thead><tr><th>{e?"Organization":"Организация"}</th><th>{e?"Owner login":"Логин владельца"}</th><th>{e?"Users":"Пользователи"}</th><th>{e?"Outstanding":"Задолженность"}</th><th>{e?"Status":"Статус"}</th><th>{e?"Last sign-in":"Последний вход"}</th><th>{e?"Access":"Доступ"}</th></tr></thead><tbody>{filtered.map((organization) => <OrganizationRow organization={organization} key={organization.id} />)}</tbody></table></div> : <div className={styles.emptyState}><strong>{data.metrics.organizations ? (e?"No organizations found":"Организации не найдены") : (e?"No organizations yet":"Организаций пока нет")}</strong><span>{query ? (e?"Clear the search or change the query.":"Очистите поиск или измените запрос.") : (e?"Create the first organization using the form above.":"Создайте первую организацию в форме выше.")}</span></div>}
+      <footer><span>{e?"Showing":"Показано"} {filtered.length} {e?"of":"из"} {data.total}</span><nav className={styles.pagination}>{data.page>1&&<Link href={`/admin/organizations?${new URLSearchParams({q:query,page:String(data.page-1)})}`}>{e?"Previous":"Назад"}</Link>}<span>{data.page} / {data.totalPages}</span>{data.page<data.totalPages&&<Link href={`/admin/organizations?${new URLSearchParams({q:query,page:String(data.page+1)})}`}>{e?"Next":"Далее"}</Link>}</nav></footer>
     </section>
   </div>;
 }
@@ -50,7 +51,7 @@ export function OrganizationManagement({ data }: { data: AdminDashboardData }) {
 function OrganizationRow({ organization }: { organization: OrganizationAdminRow }) {
   const { locale } = useTranslations(); const e = locale === "en";
   const [state, action, pending] = useActionState(resetOwnerPasswordAction, initialState);
-  return <><tr><td><Link className={styles.organizationLink} href={`/admin/organizations/${organization.id}`}><strong>{organization.name}</strong><span>{organization.code}</span></Link></td><td><code>{organization.ownerLogin}</code></td><td><strong>{organization.users}</strong><span>{organization.activeUsers} {e?"active":"активны"}</span></td><td><div className={styles.moneyStack}>{(["BYN", "USD", "RUB"] as const).map((currency) => organization.finances[currency].debt > 0 && <span key={currency}>{formatMoney(organization.finances[currency].debt, currency, locale)}</span>)}</div>{Object.values(organization.finances).every((item) => item.debt === 0) && <span>{e?"None":"Нет"}</span>}</td><td><span className={styles.status} data-status={organization.status}>{organization.status === "active" ? (e?"Active":"Активна") : (e?"Suspended":"Приостановлена")}</span></td><td>{organization.lastActivityAt ? new Intl.DateTimeFormat(e?"en-GB":"ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(organization.lastActivityAt)) : (e?"Never signed in":"Ещё не входили")}</td><td>{organization.ownerAccountId && <form action={action}><input type="hidden" name="accountId" value={organization.ownerAccountId} /><input type="hidden" name="organizationName" value={organization.name} /><button className={styles.textButton} disabled={pending}>{pending ? (e?"Resetting…":"Сброс…") : (e?"New password":"Новый пароль")}</button></form>}</td></tr>{(state.credentials || state.error) && <tr className={styles.credentialRow}><td colSpan={7}><CredentialCard state={state} emptyText="" /></td></tr>}</>;
+  return <><tr><td><Link className={styles.organizationLink} href={`/admin/organizations/${organization.id}`}><strong>{organization.name}</strong><span>{organization.code}</span></Link></td><td><code>{organization.ownerLogin}</code></td><td><strong>{organization.users}</strong><span>{organization.activeUsers} {e?"active":"активны"}</span></td><td><div className={styles.moneyStack}>{(["BYN", "USD", "RUB"] as const).map((currency) => organization.finances[currency].debt > 0 && <span key={currency}>{formatMoney(organization.finances[currency].debt, currency, locale)}</span>)}</div>{Object.values(organization.finances).every((item) => item.debt === 0) && <span>{e?"None":"Нет"}</span>}</td><td><span className={styles.status} data-status={organization.status}>{organization.status === "active" ? (e?"Active":"Активна") : (e?"Suspended":"Приостановлена")}</span></td><td>{organization.lastActivityAt ? new Intl.DateTimeFormat(e?"en-GB":"ru-RU", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Minsk" }).format(new Date(organization.lastActivityAt)) : (e?"Never signed in":"Ещё не входили")}</td><td>{organization.ownerAccountId && <form action={action}><input type="hidden" name="accountId" value={organization.ownerAccountId} /><input type="hidden" name="organizationName" value={organization.name} /><button className={styles.textButton} disabled={pending}>{pending ? (e?"Resetting…":"Сброс…") : (e?"New password":"Новый пароль")}</button></form>}</td></tr>{(state.credentials || state.error) && <tr className={styles.credentialRow}><td colSpan={7}><CredentialCard state={state} emptyText="" /></td></tr>}</>;
 }
 
 function CredentialCard({ state, emptyText }: { state: AdminActionState; emptyText: string }) {
